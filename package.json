@@ -1,0 +1,45 @@
+{
+  "name": "stablescrow",
+  "version": "1.0.0",
+  "files": [
+    "contracts",
+    "test"
+  ],
+  "scripts": {
+    "lint:js": "eslint .",
+    "lint:js:fix": "eslint . --fix",
+    "lint:sol": "solium -d .",
+    "lint:sol:fix": "solium -d . --fix",
+    "lint": "npm run lint:js && npm run lint:sol",
+    "lint:fix": "npm run lint:js:fix && npm run lint:sol:fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stablescrow/stablescrow.git"
+  },
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "smart",
+    "contracts"
+  ],
+  "author": "stablescrow",
+  "license": "",
+  "bugs": {
+    "url": "https://github.com/stablescrow/stablescrow/issues"
+  },
+  "homepage": "https://github.com/stablescrow/stablescrow",
+  "devDependencies": {
+    "bn-chai": "^1.0.1",
+    "chai": "^4.2.0",
+    "eslint": "^4.19.1",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.17.1",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-standard": "^3.1.0",
+    "ganache-cli": "^6.4.3",
+    "solium": "^1.2.4",
+    "truffle": "^5.0.12"
+  }
+}

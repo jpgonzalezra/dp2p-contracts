@@ -19,6 +19,7 @@ contract('Stablescrow', (accounts) => {
   const owner = accounts[1];
   const creator = accounts[2];
   const agent = accounts[5];
+  const agent2 = accounts[6];
   const seller = accounts[3];
   const buyer = accounts[4];
 
@@ -299,15 +300,15 @@ contract('Stablescrow', (accounts) => {
     });
   });
   describe('createAndDepositEscrow', function () {
-    it('create escrow and deposit in the same operation', async () => {
+    it.only('create escrow and deposit in the same operation', async () => {
       const amount = WEI;
 
       await approve(seller, amount);
       const salt = basicEscrow.salt;
-      const id = await calcId(agent, seller, buyer, 500, salt);
+      const id = await calcId(agent2, seller, buyer, 500, salt);
       await updateBalances(id);
       const Deposit = await toEvents(
-        tokenEscrow.createAndDepositEscrow(amount, agent, buyer, 500, salt, { from: seller }),
+        tokenEscrow.createAndDepositEscrow(amount, agent2, buyer, 500, salt, { from: seller }),
         'Deposit'
       );
 
@@ -319,7 +320,7 @@ contract('Stablescrow', (accounts) => {
       expect(Deposit._toplatform).to.eq.BN(toplatform);
 
       const escrow = await tokenEscrow.escrows(id);
-      expect(escrow.agent, agent);
+      expect(escrow.agent, agent2);
       expect(escrow.seller, seller);
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
@@ -330,7 +331,7 @@ contract('Stablescrow', (accounts) => {
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
-      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
+      expect(await erc20.balanceOf(agent2)).to.eq.BN(prevBalAgent);
       expect(await erc20.balanceOf(seller)).to.eq.BN(
         prevBalanceSeller.sub(amount)
       );

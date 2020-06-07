@@ -317,7 +317,7 @@ contract('Stablescrow', (accounts) => {
       const toplatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toplatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toplatform).to.eq.BN(toplatform);
+      expect(Deposit._toPlatform).to.eq.BN(toplatform);
 
       const escrow = await tokenEscrow.escrows(id);
       expect(escrow.agent, agent2);
@@ -360,7 +360,7 @@ contract('Stablescrow', (accounts) => {
       const toplatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toplatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toplatform).to.eq.BN(toplatform);
+      expect(Deposit._toPlatform).to.eq.BN(toplatform);
 
       const escrow = await tokenEscrow.escrows(id);
       expect(escrow.agent, agent);
@@ -402,7 +402,7 @@ contract('Stablescrow', (accounts) => {
       const toplatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toplatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toplatform).to.eq.BN(toplatform);
+      expect(Deposit._toPlatform).to.eq.BN(toplatform);
 
       const escrow = await tokenEscrow.escrows(id);
       expect(escrow.agent, agent);
@@ -442,7 +442,7 @@ contract('Stablescrow', (accounts) => {
       const toplatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toplatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toplatform).to.eq.BN(toplatform);
+      expect(Deposit._toPlatform).to.eq.BN(toplatform);
 
       const escrow = await tokenEscrow.escrows(id);
       expect(escrow.agent, agent);

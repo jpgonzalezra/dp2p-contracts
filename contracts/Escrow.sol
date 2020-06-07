@@ -19,7 +19,7 @@ contract Stablescrow is Ownable {
         uint256 _salt
     );
 
-    event Deposit(bytes32 _id, uint256 _toEscrow, uint256 _toplatform);
+    event Deposit(bytes32 _id, uint256 _toEscrow, uint256 _toPlatform);
 
     event Release(
         bytes32 _id,

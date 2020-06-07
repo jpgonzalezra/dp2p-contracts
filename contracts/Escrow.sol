@@ -21,14 +21,6 @@ contract Stablescrow is Ownable {
 
     event Deposit(bytes32 _id, uint256 _toEscrow, uint256 _toplatform);
 
-    event Withdraw(
-        bytes32 _id,
-        address _sender,
-        address _to,
-        uint256 _toAmount,
-        uint256 _toAgent
-    );
-
     event Release(
         bytes32 _id,
         address _sender,

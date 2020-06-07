@@ -300,7 +300,7 @@ contract('Stablescrow', (accounts) => {
     });
   });
   describe('createAndDepositEscrow', function () {
-    it.only('create escrow and deposit in the same operation', async () => {
+    it('create escrow and deposit in the same operation', async () => {
       const amount = WEI;
 
       await approve(seller, amount);

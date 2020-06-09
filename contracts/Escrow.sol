@@ -43,6 +43,10 @@ contract Stablescrow is Ownable {
 
     event SetFee(uint256 _fee);
 
+    event NewAgent(address _agent);
+
+    event RemoveAgent(address _agent);
+
     event PlatformWithdraw(IERC20 _token, address _to, uint256 _amount);
 
     struct Escrow {
@@ -65,6 +69,7 @@ contract Stablescrow is Ownable {
     uint256 public platformBalance;
 
     mapping(bytes32 => Escrow) public escrows;
+    mapping(address => bool) public agents;
 
     constructor(address _token) public {
         require(_token != address(0), "constructor: address 0x is invalid");
@@ -88,6 +93,20 @@ contract Stablescrow is Ownable {
             "platformWithdraw: Error transfer to platform"
         );
         emit PlatformWithdraw(token, _to, _amount);
+    }
+
+    function newAgent(address _agent) external onlyOwner {
+        require(_agent != address(0), "newAgent: address 0x is invalid");
+        require(!agents[_agent], "newAgent: the agent alredy exists");
+        agents[_agent] = true;
+        emit NewAgent(_agent);
+    }
+
+    function removeAgent(address _agent) external onlyOwner {
+        require(_agent != address(0), "removeAgent: address 0x is invalid");
+        require(agents[_agent], "removeAgent: the agent does not exist");
+        agents[_agent] = false;
+        emit RemoveAgent(_agent);
     }
 
     /// View functions
@@ -297,6 +316,8 @@ contract Stablescrow is Ownable {
             "createEscrow: The agent fee should be lower or the same than 1000"
         );
 
+        require(agents[_agent], "createEscrow: the agent is invalid");
+
         /// Calculate the escrow id
         id = calculateId(_agent, _seller, _buyer, _fee, _salt);
 
@@ -325,10 +346,11 @@ contract Stablescrow is Ownable {
         @param _to the address where the tokens will go
         @param _amount the base amount
     */
-    function _withdraw(bytes32 _id, address _to, uint256 _amount)
-        internal
-        returns (uint256 toAmount, uint256 agentFee)
-    {
+    function _withdraw(
+        bytes32 _id,
+        address _to,
+        uint256 _amount
+    ) internal returns (uint256 toAmount, uint256 agentFee) {
         Escrow storage escrow = escrows[_id];
 
         /// calculate the fee

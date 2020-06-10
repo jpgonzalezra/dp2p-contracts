@@ -1,5 +1,5 @@
-const TestToken = artifacts.require('TestToken');
-const Stablescrow = artifacts.require('Stablescrow');
+const TestToken = artifacts.require("TestToken");
+const Stablescrow = artifacts.require("Stablescrow");
 
 const {
   bn,
@@ -10,10 +10,10 @@ const {
   maxUint,
   random32,
   random32bn,
-} = require('./helper/index.js');
+} = require("./helper/index.js");
 
-contract('Stablescrow', (accounts) => {
-  const WEI = bn(web3.utils.toWei('1'));
+contract("Stablescrow", (accounts) => {
+  const WEI = bn(web3.utils.toWei("1"));
   let BASE;
 
   const owner = accounts[1];
@@ -59,13 +59,13 @@ contract('Stablescrow', (accounts) => {
   const calcId = async (agent, seller, buyer, fee, salt) => {
     const id = await tokenEscrow.calculateId(agent, seller, buyer, fee, salt);
     const localId = web3.utils.soliditySha3(
-      { t: 'address', v: tokenEscrow.address },
-      { t: 'address', v: agent },
-      { t: 'address', v: seller },
-      { t: 'address', v: buyer },
-      { t: 'uint256', v: fee },
-      { t: 'address', v: erc20.address },
-      { t: 'uint256', v: salt }
+      { t: "address", v: tokenEscrow.address },
+      { t: "address", v: agent },
+      { t: "address", v: seller },
+      { t: "address", v: buyer },
+      { t: "uint256", v: fee },
+      { t: "address", v: erc20.address },
+      { t: "uint256", v: salt }
     );
 
     expect(id).to.equal(localId);
@@ -98,9 +98,10 @@ contract('Stablescrow', (accounts) => {
     await tokenEscrow.deposit(id, amount, { from: escrow.seller });
   };
 
-  before('deploy contracts', async function () {
+  before("deploy contracts", async function () {
     erc20 = await TestToken.new({ from: owner });
     tokenEscrow = await Stablescrow.new(erc20.address, { from: owner });
+    await tokenEscrow.newAgent(agent, { from: owner });
 
     await tokenEscrow.setPlatformFee(50, { from: owner });
     BASE = await tokenEscrow.BASE();
@@ -116,59 +117,59 @@ contract('Stablescrow', (accounts) => {
     expect(await tokenEscrow.token()).to.equal(erc20.address);
   });
 
-  describe('setPlataforFee', function () {
-    it('set 0% platform fee', async () => {
+  describe("setPlataforFee", function () {
+    it("set 0% platform fee", async () => {
       const fee = bn(0);
       const setFeeEvent = await toEvents(
         tokenEscrow.setPlatformFee(fee, { from: owner }),
-        'SetFee'
+        "SetFee"
       );
 
       expect(setFeeEvent._fee).to.eq.BN(fee);
       expect(await tokenEscrow.fee()).to.eq.BN(fee);
     });
-    it('set max platform fee allowed', async () => {
+    it("set max platform fee allowed", async () => {
       const maxFeeAllowed = await tokenEscrow.MAX_FEE();
       const setFeeEvent = await toEvents(
         tokenEscrow.setPlatformFee(maxFeeAllowed, { from: owner }),
-        'SetFee'
+        "SetFee"
       );
 
       expect(setFeeEvent._fee).to.eq.BN(maxFeeAllowed);
       expect(await tokenEscrow.fee()).to.eq.BN(maxFeeAllowed);
     });
-    it('should be fail, set fee > MAX_FEE', async function () {
+    it("should be fail, set fee > MAX_FEE", async function () {
       const maxFeeAllowed = await tokenEscrow.MAX_FEE();
       const wrongFee = maxFeeAllowed + 1;
       await tryCatchRevert(
         () => tokenEscrow.setPlatformFee(wrongFee, { from: owner }),
-        'setPlatformFee: The platform fee should be lower than the MAX_FEE'
+        "setPlatformFee: The platform fee should be lower than the MAX_FEE"
       );
       await tryCatchRevert(
         () => tokenEscrow.setPlatformFee(maxUint(256), { from: owner }),
-        'setPlatformFee: The platform fee should be lower than the MAX_FEE'
+        "setPlatformFee: The platform fee should be lower than the MAX_FEE"
       );
     });
   });
-  describe('onlyOwner', async function () {
-    it('not owner want to set platform fee', async function () {
+  describe("onlyOwner", async function () {
+    it("not owner want to set platform fee", async function () {
       await tryCatchRevert(
         () => tokenEscrow.setPlatformFee(0, { from: creator }),
-        'Owneable: The owner should be the sender'
+        "Owneable: The owner should be the sender"
       );
     });
-    it('not owner want to withdraw tokens', async function () {
+    it("not owner want to withdraw tokens", async function () {
       await tryCatchRevert(
         () =>
           tokenEscrow.platformWithdraw(address0x, address0x, {
             from: creator,
           }),
-        'Owneable: The owner should be the sender'
+        "Owneable: The owner should be the sender"
       );
     });
   });
-  describe('platformWithdraw', function () {
-    it('platform balance withdraw', async () => {
+  describe("platformWithdraw", function () {
+    it("platform balance withdraw", async () => {
       const id = await createBasicEscrow();
       await deposit(id);
 
@@ -179,7 +180,7 @@ contract('Stablescrow', (accounts) => {
 
       const platformWithdraw = await toEvents(
         tokenEscrow.platformWithdraw(creator, platatormFee, { from: owner }),
-        'PlatformWithdraw'
+        "PlatformWithdraw"
       );
 
       expect(platformWithdraw._to, creator);
@@ -199,7 +200,7 @@ contract('Stablescrow', (accounts) => {
         prevBalTokenEscrow.sub(platatormFee)
       );
     });
-    it('want to withdraw with invalid amount', async () => {
+    it("want to withdraw with invalid amount", async () => {
       const id = await createBasicEscrow();
 
       await deposit(id);
@@ -208,50 +209,50 @@ contract('Stablescrow', (accounts) => {
       await tryCatchRevert(
         () =>
           tokenEscrow.platformWithdraw(creator, maxUint(256), { from: owner }),
-        'Sub overflow'
+        "Sub overflow"
       );
     });
-    it('want to withdraw to invalid address', async function () {
+    it("want to withdraw to invalid address", async function () {
       await tryCatchRevert(
         () => tokenEscrow.platformWithdraw(address0x, 0, { from: owner }),
-        'platformWithdraw: address 0x is invalid'
+        "platformWithdraw: address 0x is invalid"
       );
     });
   });
-  describe('operations non-escrow', function () {
-    it('deposit when does not exist the escrow', async () => {
+  describe("operations non-escrow", function () {
+    it("deposit when does not exist the escrow", async () => {
       await tryCatchRevert(
         () => tokenEscrow.deposit(random32(), 0, { from: agent }),
-        'deposit: The sender should be the seller'
+        "deposit: The sender should be the seller"
       );
     });
-    it('withdraw to buyer non-escrow', async () => {
+    it("withdraw to buyer non-escrow", async () => {
       await tryCatchRevert(
         () => tokenEscrow.release(random32(), 0, { from: agent }),
-        'release: the sender should be the seller'
+        "release: the sender should be the seller"
       );
     });
-    it('withdraw to seller non-escrow', async () => {
+    it("withdraw to seller non-escrow", async () => {
       await tryCatchRevert(
         () => tokenEscrow.buyerCancel(random32(), 0, { from: agent }),
-        'buyerCancel: the sender should be the buyer or the agent'
+        "buyerCancel: the sender should be the buyer or the agent"
       );
     });
-    it('cancel an escrow non-existent', async () => {
+    it("cancel an escrow non-existent", async () => {
       await tryCatchRevert(
         () => tokenEscrow.cancel(random32(), { from: agent }),
-        'cancel: the sender should be the agent'
+        "cancel: the sender should be the agent"
       );
     });
   });
-  describe('createEscrow', function () {
-    it('create basic escrow', async () => {
+  describe("createEscrow", function () {
+    it("create basic escrow", async () => {
       const salt = random32bn();
       const id = await calcId(agent, seller, buyer, 0, salt);
 
       const CreateEscrow = await toEvents(
         tokenEscrow.createEscrow(seller, buyer, 0, salt, { from: agent }),
-        'CreateEscrow'
+        "CreateEscrow"
       );
 
       expect(CreateEscrow._id).to.equal(id);
@@ -269,7 +270,7 @@ contract('Stablescrow', (accounts) => {
       expect(escrow.fee).to.eq.BN(0);
       expect(escrow.balance).to.eq.BN(0);
     });
-    it('create two escrows with the same id', async function () {
+    it("create two escrows with the same id", async function () {
       await tryCatchRevert(
         () =>
           tokenEscrow.createEscrow(
@@ -279,37 +280,41 @@ contract('Stablescrow', (accounts) => {
             basicEscrow.salt,
             { from: basicEscrow.agent }
           ),
-        'createEscrow: The escrow exists'
+        "createEscrow: The escrow exists"
       );
     });
-    it('set a higth agent fee(>10%)', async function () {
+    it("set a higth agent fee(>10%)", async function () {
       await tryCatchRevert(
         () =>
           tokenEscrow.createEscrow(seller, buyer, 1001, random32bn(), {
             from: creator,
           }),
-        'createEscrow: The agent fee should be lower or the same than 1000'
+        "createEscrow: The agent fee should be lower or the same than 1000"
       );
       await tryCatchRevert(
         () =>
           tokenEscrow.createEscrow(seller, buyer, maxUint(256), random32bn(), {
             from: creator,
           }),
-        'createEscrow: The agent fee should be lower or the same than 1000'
+        "createEscrow: The agent fee should be lower or the same than 1000"
       );
     });
   });
-  describe('createAndDepositEscrow', function () {
-    it('create escrow and deposit in the same operation', async () => {
+  describe("createAndDepositEscrow", function () {
+    it("create escrow and deposit in the same operation", async () => {
       const amount = WEI;
 
       await approve(seller, amount);
       const salt = basicEscrow.salt;
       const id = await calcId(agent2, seller, buyer, 500, salt);
       await updateBalances(id);
+      await tokenEscrow.newAgent(agent2, { from: owner });
+      
       const Deposit = await toEvents(
-        tokenEscrow.createAndDepositEscrow(amount, agent2, buyer, 500, salt, { from: seller }),
-        'Deposit'
+        tokenEscrow.createAndDepositEscrow(amount, agent2, buyer, 500, salt, {
+          from: seller,
+        }),
+        "Deposit"
       );
 
       expect(Deposit._id, id);
@@ -342,8 +347,8 @@ contract('Stablescrow', (accounts) => {
       );
     });
   });
-  describe('deposit', function () {
-    it('deposit tokens in an escrow', async () => {
+  describe("deposit", function () {
+    it("deposit tokens in an escrow", async () => {
       const id = await createBasicEscrow();
       const amount = WEI;
 
@@ -352,7 +357,7 @@ contract('Stablescrow', (accounts) => {
 
       const Deposit = await toEvents(
         tokenEscrow.deposit(id, amount, { from: seller }),
-        'Deposit'
+        "Deposit"
       );
 
       expect(Deposit._id, id);
@@ -385,7 +390,7 @@ contract('Stablescrow', (accounts) => {
         prevBalTokenEscrow.add(amount)
       );
     });
-    it('deposit 0 amount in an escrow', async () => {
+    it("deposit 0 amount in an escrow", async () => {
       const id = await createBasicEscrow();
       const amount = bn(0);
 
@@ -394,7 +399,7 @@ contract('Stablescrow', (accounts) => {
 
       const Deposit = await toEvents(
         tokenEscrow.deposit(id, amount, { from: seller }),
-        'Deposit'
+        "Deposit"
       );
 
       expect(Deposit._id, id);
@@ -410,9 +415,7 @@ contract('Stablescrow', (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
-        prevPlatformBalance
-      );
+      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -425,7 +428,7 @@ contract('Stablescrow', (accounts) => {
         prevBalTokenEscrow
       );
     });
-    it('deposit higth amount in an escrow', async () => {
+    it("deposit higth amount in an escrow", async () => {
       const id = await createBasicEscrow();
       const amount = maxUint(240);
 
@@ -434,7 +437,7 @@ contract('Stablescrow', (accounts) => {
 
       const Deposit = await toEvents(
         tokenEscrow.deposit(id, amount, { from: seller }),
-        'Deposit'
+        "Deposit"
       );
 
       expect(Deposit._id, id);
@@ -467,17 +470,17 @@ contract('Stablescrow', (accounts) => {
         prevBalTokenEscrow.add(amount)
       );
     });
-    it('deposit in an escrow without be the seller', async () => {
+    it("deposit in an escrow without be the seller", async () => {
       const id = await createBasicEscrow();
 
       await tryCatchRevert(
         () => tokenEscrow.deposit(id, 0, { from: creator }),
-        'deposit: The sender should be the seller'
+        "deposit: The sender should be the seller"
       );
     });
   });
-  describe('release', function () {
-    it('release escrow from seller', async () => {
+  describe("release", function () {
+    it("release escrow from seller", async () => {
       const id = await createBasicEscrow();
       await deposit(id);
       const amount = WEI.div(bn(2));
@@ -486,7 +489,7 @@ contract('Stablescrow', (accounts) => {
 
       const Release = await toEvents(
         tokenEscrow.release(id, amount, { from: seller }),
-        'Release'
+        "Release"
       );
 
       expect(Release._id, id);
@@ -503,9 +506,7 @@ contract('Stablescrow', (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
-        prevPlatformBalance
-      );
+      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -520,7 +521,7 @@ contract('Stablescrow', (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it('release invalid amount (0)', async () => {
+    it("release invalid amount (0)", async () => {
       const id = await createBasicEscrow();
       await deposit(id);
       const amount = bn(0);
@@ -529,7 +530,7 @@ contract('Stablescrow', (accounts) => {
 
       const Release = await toEvents(
         tokenEscrow.release(id, amount, { from: seller }),
-        'Release'
+        "Release"
       );
 
       expect(Release._id, id);
@@ -546,9 +547,7 @@ contract('Stablescrow', (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
-        prevPlatformBalance
-      );
+      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -563,22 +562,22 @@ contract('Stablescrow', (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it('release with invalid address, should be the seller', async () => {
+    it("release with invalid address, should be the seller", async () => {
       const id = await createBasicEscrow();
 
       await tryCatchRevert(
         () => tokenEscrow.release(id, 0, { from: buyer }),
-        'release: the sender should be the seller'
+        "release: the sender should be the seller"
       );
 
       await tryCatchRevert(
         () => tokenEscrow.release(id, 0, { from: creator }),
-        'release: the sender should be the seller'
+        "release: the sender should be the seller"
       );
     });
   });
-  describe('resolveDispute', function() {
-    it('resolveDispute from agent', async () => {
+  describe("resolveDispute", function () {
+    it("resolveDispute from agent", async () => {
       const id = await createBasicEscrow();
       await deposit(id);
       const amount = WEI.div(bn(2));
@@ -587,7 +586,7 @@ contract('Stablescrow', (accounts) => {
 
       const DisputeResolved = await toEvents(
         tokenEscrow.resolveDispute(id, amount, { from: agent }),
-        'DisputeResolved'
+        "DisputeResolved"
       );
 
       expect(DisputeResolved._id, id);
@@ -604,9 +603,7 @@ contract('Stablescrow', (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
-        prevPlatformBalance
-      );
+      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -621,22 +618,22 @@ contract('Stablescrow', (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it('resolveDispute with invalid address, should be the agent', async () => {
+    it("resolveDispute with invalid address, should be the agent", async () => {
       const id = await createBasicEscrow();
 
       await tryCatchRevert(
         () => tokenEscrow.resolveDispute(id, 0, { from: buyer }),
-        'resolveDispute: the sender should be the agent'
+        "resolveDispute: the sender should be the agent"
       );
 
       await tryCatchRevert(
         () => tokenEscrow.resolveDispute(id, 0, { from: creator }),
-        'resolveDispute: the sender should be the agent'
+        "resolveDispute: the sender should be the agent"
       );
     });
-  })
-  describe('buyerCancel', function () {
-    it('buyerCancel by the buyer', async () => {
+  });
+  describe("buyerCancel", function () {
+    it("buyerCancel by the buyer", async () => {
       const id = await createBasicEscrow();
       await deposit(id);
       const amount = WEI.div(bn(2));
@@ -645,7 +642,7 @@ contract('Stablescrow', (accounts) => {
 
       const BuyerCancel = await toEvents(
         tokenEscrow.buyerCancel(id, amount, { from: buyer }),
-        'BuyerCancel'
+        "BuyerCancel"
       );
 
       expect(BuyerCancel._id, id);
@@ -662,9 +659,7 @@ contract('Stablescrow', (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
-        prevPlatformBalance
-      );
+      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -679,7 +674,7 @@ contract('Stablescrow', (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it('buyerCancel by the agent', async () => {
+    it("buyerCancel by the agent", async () => {
       const id = await createBasicEscrow();
       await deposit(id);
       const amount = WEI.div(bn(2));
@@ -688,7 +683,7 @@ contract('Stablescrow', (accounts) => {
 
       const BuyerCancel = await toEvents(
         tokenEscrow.buyerCancel(id, amount, { from: agent }),
-        'BuyerCancel'
+        "BuyerCancel"
       );
 
       expect(BuyerCancel._id, id);
@@ -705,9 +700,7 @@ contract('Stablescrow', (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
-        prevPlatformBalance
-      );
+      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -722,7 +715,7 @@ contract('Stablescrow', (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it('buyerCancel and send to seller 0 amount', async () => {
+    it("buyerCancel and send to seller 0 amount", async () => {
       const id = await createBasicEscrow();
       await deposit(id);
       const amount = bn(0);
@@ -731,7 +724,7 @@ contract('Stablescrow', (accounts) => {
 
       const BuyerCancel = await toEvents(
         tokenEscrow.buyerCancel(id, amount, { from: buyer }),
-        'BuyerCancel'
+        "BuyerCancel"
       );
 
       expect(BuyerCancel._id, id);
@@ -748,9 +741,7 @@ contract('Stablescrow', (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
-        prevPlatformBalance
-      );
+      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -765,22 +756,22 @@ contract('Stablescrow', (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it('buyerCancel without being the buyer or the agent', async () => {
+    it("buyerCancel without being the buyer or the agent", async () => {
       const id = await createBasicEscrow();
 
       await tryCatchRevert(
         () => tokenEscrow.buyerCancel(id, 0, { from: seller }),
-        'buyerCancel: the sender should be the buyer or the agent'
+        "buyerCancel: the sender should be the buyer or the agent"
       );
 
       await tryCatchRevert(
         () => tokenEscrow.buyerCancel(id, 0, { from: creator }),
-        'buyerCancel: the sender should be the buyer or the agent'
+        "buyerCancel: the sender should be the buyer or the agent"
       );
     });
   });
-  describe('cancel', function () {
-    it('cancel an escrow', async () => {
+  describe("cancel", function () {
+    it("cancel an escrow", async () => {
       const id = await createBasicEscrow();
       await deposit(id);
 
@@ -788,7 +779,7 @@ contract('Stablescrow', (accounts) => {
 
       const Cancel = await toEvents(
         tokenEscrow.cancel(id, { from: agent }),
-        'Cancel'
+        "Cancel"
       );
 
       expect(Cancel._id, id);
@@ -799,9 +790,7 @@ contract('Stablescrow', (accounts) => {
       expect(escrow.seller, address0x);
       expect(escrow.buyer, address0x);
       expect(escrow.fee).to.eq.BN(0);
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
-        prevPlatformBalance
-      );
+      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
       expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
@@ -815,12 +804,52 @@ contract('Stablescrow', (accounts) => {
         prevBalTokenEscrow.sub(prevBalEscrow)
       );
     });
-    it('cancel without being the agent', async () => {
+    it("cancel without being the agent", async () => {
       const id = await createBasicEscrow();
 
       await tryCatchRevert(
         () => tokenEscrow.cancel(id, { from: seller }),
-        'cancel: the sender should be the agent'
+        "cancel: the sender should be the agent"
+      );
+    });
+  });
+  describe("newAgent", function () {
+    it("new agent", async () => {
+      const NewAgent = await toEvents(
+        tokenEscrow.newAgent(accounts[9], { from: owner }),
+        "NewAgent"
+      );
+    });
+    it("already exist", async () => {
+      await tryCatchRevert(
+        () => tokenEscrow.newAgent(accounts[9], { from: owner }),
+        "newAgent: the agent alredy exists"
+      );
+    });
+    it("invalid address", async () => {
+      await tryCatchRevert(
+        () => tokenEscrow.newAgent(address0x, { from: owner }),
+        "newAgent: address 0x is invalid"
+      );
+    });
+  });
+  describe("RemoveAgent", function () {
+    it("remove agent", async () => {
+      const RemoveAgent = await toEvents(
+        tokenEscrow.removeAgent(accounts[9], { from: owner }),
+        "RemoveAgent"
+      );
+    });
+    it("not exist", async () => {
+      await tryCatchRevert(
+        () => tokenEscrow.removeAgent(accounts[9], { from: owner }),
+        "removeAgent: the agent does not exist"
+      );
+    });
+    it("invalid address", async () => {
+      await tryCatchRevert(
+        () => tokenEscrow.removeAgent(address0x, { from: owner }),
+        "removeAgent: address 0x is invalid"
       );
     });
   });

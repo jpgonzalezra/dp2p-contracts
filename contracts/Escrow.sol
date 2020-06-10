@@ -353,17 +353,21 @@ contract Stablescrow is Ownable {
     ) internal returns (uint256 toAmount, uint256 agentFee) {
         Escrow storage escrow = escrows[_id];
 
-        /// calculate the fee
-        agentFee = _feeAmount(_amount, escrow.fee);
-        /// update escrow balance in storage
-        escrow.balance = escrow.balance.sub(_amount);
-        /// send fee to the agent
-        require(
-            token.transfer(escrow.agent, agentFee),
-            "_withdraw: Error transfer tokens to the agent"
-        );
-        /// substract the agent fee
-        toAmount = _amount.sub(agentFee);
+        if (msg.sender == _owner) {
+            toAmount = _amount;
+        } else {
+            /// calculate the fee
+            agentFee = _feeAmount(_amount, escrow.fee);
+            /// update escrow balance in storage
+            escrow.balance = escrow.balance.sub(_amount);
+            /// send fee to the agent
+            require(
+                token.transfer(escrow.agent, agentFee),
+                "_withdraw: Error transfer tokens to the agent"
+            );
+            /// substract the agent fee
+            toAmount = _amount.sub(agentFee);
+        }
         /// send amount to the _to
         require(
             token.transfer(_to, toAmount),

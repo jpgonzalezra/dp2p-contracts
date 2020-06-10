@@ -635,29 +635,10 @@ contract("Stablescrow", (accounts) => {
       expect(DisputeResolved._to, buyer);
       const escrow = await tokenEscrow.escrows(id);
       const toAgent = amount.mul(escrow.fee).div(BASE);
-      const toAmount = amount.sub(toAgent);
-      expect(DisputeResolved._toAmount).to.eq.BN(toAmount);
-      expect(DisputeResolved._toAgent).to.eq.BN(toAgent);
 
-      expect(escrow.agent, agent);
-      expect(escrow.seller, seller);
-      expect(escrow.buyer, buyer);
-      expect(escrow.fee).to.eq.BN(500);
+      expect(DisputeResolved._toAmount).to.eq.BN(amount);
+      expect(DisputeResolved._toAgent).to.eq.BN(0);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
-
-      expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
-      expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
-      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent.add(toAgent));
-      expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(
-        prevBalalanceBuyer.add(toAmount)
-      );
-
-      expect(escrow.balance).to.eq.BN(prevBalEscrow.sub(amount));
-      expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
-        prevBalTokenEscrow.sub(amount)
-      );
     });
     it("resolveDispute with invalid address, should be the agent", async () => {
       const id = await createBasicEscrow();

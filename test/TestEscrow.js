@@ -309,7 +309,7 @@ contract("Stablescrow", (accounts) => {
       const id = await calcId(agent2, seller, buyer, 500, salt);
       await updateBalances(id);
       await tokenEscrow.newAgent(agent2, { from: owner });
-      
+
       const Deposit = await toEvents(
         tokenEscrow.createAndDepositEscrow(amount, agent2, buyer, 500, salt, {
           from: seller,
@@ -618,17 +618,58 @@ contract("Stablescrow", (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
+    it("resolveDispute from owner", async () => {
+      const id = await createBasicEscrow();
+      await deposit(id);
+      const amount = WEI.div(bn(2));
+
+      await updateBalances(id);
+
+      const DisputeResolved = await toEvents(
+        tokenEscrow.resolveDispute(id, amount, { from: owner }),
+        "DisputeResolved"
+      );
+
+      expect(DisputeResolved._id, id);
+      expect(DisputeResolved._sender, agent);
+      expect(DisputeResolved._to, buyer);
+      const escrow = await tokenEscrow.escrows(id);
+      const toAgent = amount.mul(escrow.fee).div(BASE);
+      const toAmount = amount.sub(toAgent);
+      expect(DisputeResolved._toAmount).to.eq.BN(toAmount);
+      expect(DisputeResolved._toAgent).to.eq.BN(toAgent);
+
+      expect(escrow.agent, agent);
+      expect(escrow.seller, seller);
+      expect(escrow.buyer, buyer);
+      expect(escrow.fee).to.eq.BN(500);
+
+      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
+
+      expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
+      expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
+      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent.add(toAgent));
+      expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(
+        prevBalalanceBuyer.add(toAmount)
+      );
+
+      expect(escrow.balance).to.eq.BN(prevBalEscrow.sub(amount));
+      expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
+        prevBalTokenEscrow.sub(amount)
+      );
+    });
     it("resolveDispute with invalid address, should be the agent", async () => {
       const id = await createBasicEscrow();
 
       await tryCatchRevert(
         () => tokenEscrow.resolveDispute(id, 0, { from: buyer }),
-        "resolveDispute: the sender should be the agent"
+        "resolveDispute: the sender should be the agent or owner"
       );
 
       await tryCatchRevert(
         () => tokenEscrow.resolveDispute(id, 0, { from: creator }),
-        "resolveDispute: the sender should be the agent"
+        "resolveDispute: the sender should be the agent or owner"
       );
     });
   });

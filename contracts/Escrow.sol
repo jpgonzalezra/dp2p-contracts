@@ -211,8 +211,8 @@ contract Stablescrow is Ownable {
     function resolveDispute(bytes32 _id, uint256 _amount) external {
         Escrow storage escrow = escrows[_id];
         require(
-            msg.sender == escrow.agent,
-            "resolveDispute: the sender should be the agent"
+            msg.sender == escrow.agent || msg.sender == _owner,
+            "resolveDispute: the sender should be the agent or owner"
         );
         (uint256 toAmount, uint256 agentFee) = _withdraw(
             _id,

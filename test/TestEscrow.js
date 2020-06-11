@@ -811,7 +811,7 @@ contract("Stablescrow", (accounts) => {
       );
     });
   });
-  describe.only("cancel", function () {
+  describe("cancel", function () {
     it("agent cancel an escrow", async () => {
       const id = await createBasicEscrow();
       await deposit(id);

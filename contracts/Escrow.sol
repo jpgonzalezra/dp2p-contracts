@@ -258,7 +258,7 @@ contract Stablescrow is Ownable {
     function cancel(bytes32 _id) external {
         Escrow storage escrow = escrows[_id];
         require(
-            msg.sender == escrow.agent,
+            msg.sender == escrow.agent || msg.sender == _owner,
             "cancel: the sender should be the agent"
         );
 

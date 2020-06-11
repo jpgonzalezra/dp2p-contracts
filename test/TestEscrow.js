@@ -793,7 +793,7 @@ contract("Stablescrow", (accounts) => {
     });
   });
   describe("cancel", function () {
-    it("cancel an escrow", async () => {
+    it("agent cancel an escrow", async () => {
       const id = await createBasicEscrow();
       await deposit(id);
 
@@ -801,6 +801,39 @@ contract("Stablescrow", (accounts) => {
 
       const Cancel = await toEvents(
         tokenEscrow.cancel(id, { from: agent }),
+        "Cancel"
+      );
+
+      expect(Cancel._id, id);
+      expect(Cancel._amount).to.eq.BN(prevBalEscrow);
+
+      const escrow = await tokenEscrow.escrows(id);
+      expect(escrow.agent, address0x);
+      expect(escrow.seller, address0x);
+      expect(escrow.buyer, address0x);
+      expect(escrow.fee).to.eq.BN(0);
+      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
+      expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
+      expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
+      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
+      expect(await erc20.balanceOf(seller)).to.eq.BN(
+        prevBalanceSeller.add(prevBalEscrow)
+      );
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
+
+      expect(escrow.balance).to.eq.BN(0);
+      expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
+        prevBalTokenEscrow.sub(prevBalEscrow)
+      );
+    });
+    it("plataform cancel an escrow", async () => {
+      const id = await createBasicEscrow();
+      await deposit(id);
+
+      await updateBalances(id);
+
+      const Cancel = await toEvents(
+        tokenEscrow.cancel(id, { from: owner }),
         "Cancel"
       );
 

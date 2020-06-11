@@ -4,7 +4,6 @@ import "./utils/Ownable.sol";
 import "./utils/SafeMath.sol";
 import "./interfaces/IERC20.sol";
 
-
 contract Stablescrow is Ownable {
     using SafeMath for uint256;
 
@@ -214,7 +213,7 @@ contract Stablescrow is Ownable {
             msg.sender == escrow.agent || msg.sender == _owner,
             "resolveDispute: the sender should be the agent or owner"
         );
-        (uint256 toAmount, uint256 agentFee) = _withdraw(
+        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
             _id,
             escrow.buyer,
             _amount
@@ -340,7 +339,7 @@ contract Stablescrow is Ownable {
     }
 
     /**
-        @notice Withdraw an amount from an escrow and send to _to address
+        @notice Withdraw an amount from an escrow without fee and send to _to address
         @dev The sender should be the _approved or the agent of the escrow
         @param _id the id of the escrow
         @param _to the address where the tokens will go
@@ -351,13 +350,48 @@ contract Stablescrow is Ownable {
         address _to,
         uint256 _amount
     ) internal returns (uint256 toAmount, uint256 agentFee) {
+        return _withdraw(_id, _to, _amount, false);
+    }
+
+    /**
+        @notice Withdraw an amount from an escrow with fee and send to _to address
+        @dev The sender should be the _approved or the agent of the escrow
+        @param _id the id of the escrow
+        @param _to the address where the tokens will go
+        @param _amount the base amount
+    */
+    function _withdrawWithFee(
+        bytes32 _id,
+        address _to,
+        uint256 _amount
+    ) internal returns (uint256 toAmount, uint256 agentFee) {
+        return _withdraw(_id, _to, _amount, true);
+    }
+
+    /**
+        @notice Withdraw an amount from an escrow and send to _to address
+        @dev The sender should be the _approved or the agent of the escrow
+        @param _id the id of the escrow
+        @param _to the address where the tokens will go
+        @param _amount the base amount
+        @param _withFee to know if this operation has fee
+    */
+    function _withdraw(
+        bytes32 _id,
+        address _to,
+        uint256 _amount,
+        bool _withFee
+    ) internal returns (uint256 toAmount, uint256 agentFee) {
         Escrow storage escrow = escrows[_id];
 
         if (msg.sender == _owner) {
             toAmount = _amount;
         } else {
             /// calculate the fee
-            agentFee = _feeAmount(_amount, escrow.fee);
+            agentFee = 0;
+            if (_withFee) {
+                agentFee = _feeAmount(_amount, escrow.fee);
+            }
             /// update escrow balance in storage
             escrow.balance = escrow.balance.sub(_amount);
             /// send fee to the agent

@@ -4,10 +4,11 @@ import "./utils/Ownable.sol";
 import "./utils/SafeMath.sol";
 import "./interfaces/IERC20.sol";
 
+
 contract Stablescrow is Ownable {
     using SafeMath for uint256;
 
-    /// Events
+    /// User Events
     event CreateEscrow(
         bytes32 _id,
         address _agent,
@@ -16,6 +17,7 @@ contract Stablescrow is Ownable {
         uint256 _fee,
         address _token,
         uint256 _salt
+        // transactionID
     );
 
     event Deposit(bytes32 _id, uint256 _toEscrow, uint256 _toPlatform);
@@ -39,6 +41,8 @@ contract Stablescrow is Ownable {
     event BuyerCancel(bytes32 _id, uint256 _toAmount, uint256 _toAgent);
 
     event Cancel(bytes32 _id, uint256 _amount);
+    
+    /// Platform events
 
     event SetFee(uint256 _fee);
 
@@ -303,10 +307,8 @@ contract Stablescrow is Ownable {
         );
 
         /// Assign the fee amount to platform
-        platformBalanceByToken[address(token)] = platformBalanceByToken[address(
-            token
-        )]
-            .add(_amount);
+        address tokenAddress = escrow.token;
+        platformBalanceByToken[tokenAddress] = platformBalanceByToken[tokenAddress].add(platformFee);
 
         /// Assign the deposit amount to the escrow, subtracting the fee platform amount
         uint256 toEscrow = _amount.sub(platformFee);

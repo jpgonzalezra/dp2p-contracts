@@ -53,18 +53,27 @@ contract("Stablescrow", (accounts) => {
     const escrow = await tokenEscrow.escrows(id);
     prevBalEscrow = escrow.balance;
     prevBalTokenEscrow = await erc20.balanceOf(tokenEscrow.address);
-    prevPlatformBalance = await tokenEscrow.platformBalance();
+    prevPlatformBalance = await tokenEscrow.platformBalanceByToken(
+      erc20.address
+    );
   };
 
-  const calcId = async (agent, seller, buyer, fee, salt) => {
-    const id = await tokenEscrow.calculateId(agent, seller, buyer, fee, salt);
+  const calcId = async (agent, seller, buyer, fee, token, salt) => {
+    const id = await tokenEscrow.calculateId(
+      agent,
+      seller,
+      buyer,
+      fee,
+      token,
+      salt
+    );
     const localId = web3.utils.soliditySha3(
       { t: "address", v: tokenEscrow.address },
       { t: "address", v: agent },
       { t: "address", v: seller },
       { t: "address", v: buyer },
       { t: "uint256", v: fee },
-      { t: "address", v: erc20.address },
+      { t: "address", v: token },
       { t: "uint256", v: salt }
     );
 
@@ -79,6 +88,7 @@ contract("Stablescrow", (accounts) => {
       basicEscrow.seller,
       basicEscrow.buyer,
       basicEscrow.fee,
+      basicEscrow.token,
       basicEscrow.salt,
       { from: basicEscrow.agent }
     );
@@ -88,6 +98,7 @@ contract("Stablescrow", (accounts) => {
       basicEscrow.seller,
       basicEscrow.buyer,
       basicEscrow.fee,
+      basicEscrow.token,
       basicEscrow.salt
     );
   };
@@ -100,7 +111,7 @@ contract("Stablescrow", (accounts) => {
 
   before("deploy contracts", async function () {
     erc20 = await TestToken.new({ from: owner });
-    tokenEscrow = await Stablescrow.new(erc20.address, { from: owner });
+    tokenEscrow = await Stablescrow.new({ from: owner });
     await tokenEscrow.newAgent(agent, { from: owner });
 
     await tokenEscrow.setPlatformFee(50, { from: owner });
@@ -111,10 +122,9 @@ contract("Stablescrow", (accounts) => {
       seller: seller,
       buyer: buyer,
       fee: 500,
+      token: erc20.address,
       salt: salt,
     };
-
-    expect(await tokenEscrow.token()).to.equal(erc20.address);
   });
 
   describe("setPlataforFee", function () {
@@ -161,7 +171,7 @@ contract("Stablescrow", (accounts) => {
     it("not owner want to withdraw tokens", async function () {
       await tryCatchRevert(
         () =>
-          tokenEscrow.platformWithdraw(address0x, address0x, {
+          tokenEscrow.platformWithdraw([erc20.address], address0x, address0x, {
             from: creator,
           }),
         "Owneable: The owner should be the sender"
@@ -179,14 +189,16 @@ contract("Stablescrow", (accounts) => {
       await updateBalances(id);
 
       const platformWithdraw = await toEvents(
-        tokenEscrow.platformWithdraw(creator, platatormFee, { from: owner }),
+        tokenEscrow.platformWithdraw([erc20.address], creator, platatormFee, {
+          from: owner,
+        }),
         "PlatformWithdraw"
       );
 
       expect(platformWithdraw._to, creator);
       expect(platformWithdraw._token, erc20.address);
       expect(platformWithdraw._amount).to.eq.BN(platatormFee);
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
         prevPlatformBalance.sub(platatormFee)
       );
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
@@ -208,13 +220,18 @@ contract("Stablescrow", (accounts) => {
 
       await tryCatchRevert(
         () =>
-          tokenEscrow.platformWithdraw(creator, maxUint(256), { from: owner }),
+          tokenEscrow.platformWithdraw([erc20.address], creator, maxUint(256), {
+            from: owner,
+          }),
         "Sub overflow"
       );
     });
     it("want to withdraw to invalid address", async function () {
       await tryCatchRevert(
-        () => tokenEscrow.platformWithdraw(address0x, 0, { from: owner }),
+        () =>
+          tokenEscrow.platformWithdraw([erc20.address], address0x, 0, {
+            from: owner,
+          }),
         "platformWithdraw: address 0x is invalid"
       );
     });
@@ -248,10 +265,12 @@ contract("Stablescrow", (accounts) => {
   describe("createEscrow", function () {
     it("create basic escrow", async () => {
       const salt = random32bn();
-      const id = await calcId(agent, seller, buyer, 0, salt);
+      const id = await calcId(agent, seller, buyer, 0, erc20.address, salt);
 
       const CreateEscrow = await toEvents(
-        tokenEscrow.createEscrow(seller, buyer, 0, salt, { from: agent }),
+        tokenEscrow.createEscrow(seller, buyer, 0, erc20.address, salt, {
+          from: agent,
+        }),
         "CreateEscrow"
       );
 
@@ -277,6 +296,7 @@ contract("Stablescrow", (accounts) => {
             basicEscrow.seller,
             basicEscrow.buyer,
             basicEscrow.fee,
+            basicEscrow.token,
             basicEscrow.salt,
             { from: basicEscrow.agent }
           ),
@@ -286,16 +306,30 @@ contract("Stablescrow", (accounts) => {
     it("set a higth agent fee(>10%)", async function () {
       await tryCatchRevert(
         () =>
-          tokenEscrow.createEscrow(seller, buyer, 1001, random32bn(), {
-            from: creator,
-          }),
+          tokenEscrow.createEscrow(
+            seller,
+            buyer,
+            1001,
+            erc20.address,
+            random32bn(),
+            {
+              from: creator,
+            }
+          ),
         "createEscrow: The agent fee should be lower or the same than 1000"
       );
       await tryCatchRevert(
         () =>
-          tokenEscrow.createEscrow(seller, buyer, maxUint(256), random32bn(), {
-            from: creator,
-          }),
+          tokenEscrow.createEscrow(
+            seller,
+            buyer,
+            maxUint(256),
+            erc20.address,
+            random32bn(),
+            {
+              from: creator,
+            }
+          ),
         "createEscrow: The agent fee should be lower or the same than 1000"
       );
     });
@@ -306,12 +340,12 @@ contract("Stablescrow", (accounts) => {
 
       await approve(seller, amount);
       const salt = basicEscrow.salt;
-      const id = await calcId(agent2, seller, buyer, 500, salt);
+      const id = await calcId(agent2, seller, buyer, 500, erc20.address, salt);
       await updateBalances(id);
       await tokenEscrow.newAgent(agent2, { from: owner });
 
       const Deposit = await toEvents(
-        tokenEscrow.createAndDepositEscrow(amount, agent2, buyer, 500, salt, {
+        tokenEscrow.createAndDepositEscrow(amount, agent2, buyer, 500, erc20.address, salt, {
           from: seller,
         }),
         "Deposit"
@@ -319,10 +353,10 @@ contract("Stablescrow", (accounts) => {
 
       expect(Deposit._id, id);
       const fee = await tokenEscrow.fee();
-      const toplatform = amount.mul(fee).div(BASE);
-      const toEscrow = amount.sub(toplatform);
+      const toPlatform = amount.mul(fee).div(BASE);
+      const toEscrow = amount.sub(toPlatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toPlatform).to.eq.BN(toplatform);
+      expect(Deposit._toPlatform).to.eq.BN(toPlatform);
 
       const escrow = await tokenEscrow.escrows(id);
       expect(escrow.agent, agent2);
@@ -330,8 +364,8 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
-        prevPlatformBalance.add(toplatform)
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance.add(toPlatform)
       );
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
@@ -362,10 +396,10 @@ contract("Stablescrow", (accounts) => {
 
       expect(Deposit._id, id);
       const fee = await tokenEscrow.fee();
-      const toplatform = amount.mul(fee).div(BASE);
-      const toEscrow = amount.sub(toplatform);
+      const toPlatform = amount.mul(fee).div(BASE);
+      const toEscrow = amount.sub(toPlatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toPlatform).to.eq.BN(toplatform);
+      expect(Deposit._toPlatform).to.eq.BN(toPlatform);
 
       const escrow = await tokenEscrow.escrows(id);
       expect(escrow.agent, agent);
@@ -373,8 +407,8 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
-        prevPlatformBalance.add(toplatform)
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance.add(toPlatform)
       );
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
@@ -404,10 +438,10 @@ contract("Stablescrow", (accounts) => {
 
       expect(Deposit._id, id);
       const fee = await tokenEscrow.fee();
-      const toplatform = amount.mul(fee).div(BASE);
-      const toEscrow = amount.sub(toplatform);
+      const toPlatform = amount.mul(fee).div(BASE);
+      const toEscrow = amount.sub(toPlatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toPlatform).to.eq.BN(toplatform);
+      expect(Deposit._toPlatform).to.eq.BN(toPlatform);
 
       const escrow = await tokenEscrow.escrows(id);
       expect(escrow.agent, agent);
@@ -415,7 +449,9 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -442,10 +478,10 @@ contract("Stablescrow", (accounts) => {
 
       expect(Deposit._id, id);
       const fee = await tokenEscrow.fee();
-      const toplatform = amount.mul(fee).div(BASE);
-      const toEscrow = amount.sub(toplatform);
+      const toPlatform = amount.mul(fee).div(BASE);
+      const toEscrow = amount.sub(toPlatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toPlatform).to.eq.BN(toplatform);
+      expect(Deposit._toPlatform).to.eq.BN(toPlatform);
 
       const escrow = await tokenEscrow.escrows(id);
       expect(escrow.agent, agent);
@@ -453,8 +489,8 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(
-        prevPlatformBalance.add(toplatform)
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance.add(toPlatform)
       );
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
@@ -504,7 +540,9 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -545,7 +583,9 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -601,7 +641,9 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -676,7 +718,9 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -715,7 +759,9 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -754,7 +800,9 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.buyer, buyer);
       expect(escrow.fee).to.eq.BN(500);
 
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
@@ -803,7 +851,9 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.seller, address0x);
       expect(escrow.buyer, address0x);
       expect(escrow.fee).to.eq.BN(0);
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
       expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
@@ -836,7 +886,9 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.seller, address0x);
       expect(escrow.buyer, address0x);
       expect(escrow.fee).to.eq.BN(0);
-      expect(await tokenEscrow.platformBalance()).to.eq.BN(prevPlatformBalance);
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
       expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);

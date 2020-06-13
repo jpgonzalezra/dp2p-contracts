@@ -79,9 +79,9 @@ contract Stablescrow is Ownable {
     }
 
     function platformWithdraw(
+        address[] calldata _tokenAddresses,
         address _to,
-        uint256 _amount,
-        address[] calldata _tokenAddresses
+        uint256 _amount
     ) external onlyOwner {
         require(_to != address(0), "platformWithdraw: address 0x is invalid");
         for (uint256 i = 0; i < _tokenAddresses.length; i++) {

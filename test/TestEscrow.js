@@ -496,10 +496,8 @@ contract("Stablescrow", (accounts) => {
       expect(Release._sender, seller);
       expect(Release._to, buyer);
       const escrow = await tokenEscrow.escrows(id);
-      const toAgent = amount.mul(escrow.fee).div(BASE);
-      const toAmount = amount.sub(toAgent);
-      expect(Release._toAmount).to.eq.BN(toAmount);
-      expect(Release._toAgent).to.eq.BN(toAgent);
+      expect(Release._toAmount).to.eq.BN(amount);
+      expect(Release._toAgent).to.eq.BN(0);
 
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
@@ -510,10 +508,10 @@ contract("Stablescrow", (accounts) => {
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
-      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent.add(toAgent));
+      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
       expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
       expect(await erc20.balanceOf(buyer)).to.eq.BN(
-        prevBalalanceBuyer.add(toAmount)
+        prevBalalanceBuyer.add(amount)
       );
 
       expect(escrow.balance).to.eq.BN(prevBalEscrow.sub(amount));
@@ -638,7 +636,6 @@ contract("Stablescrow", (accounts) => {
 
       expect(DisputeResolved._toAmount).to.eq.BN(amount);
       expect(DisputeResolved._toAgent).to.eq.BN(0);
-
     });
     it("resolveDispute with invalid address, should be the agent", async () => {
       const id = await createBasicEscrow();
@@ -671,10 +668,8 @@ contract("Stablescrow", (accounts) => {
       expect(BuyerCancel._sender, buyer);
       expect(BuyerCancel._to, seller);
       const escrow = await tokenEscrow.escrows(id);
-      const toAgent = amount.mul(escrow.fee).div(BASE);
-      const toAmount = amount.sub(toAgent);
-      expect(BuyerCancel._toAmount).to.eq.BN(toAmount);
-      expect(BuyerCancel._toAgent).to.eq.BN(toAgent);
+      expect(BuyerCancel._toAmount).to.eq.BN(amount);
+      expect(BuyerCancel._toAgent).to.eq.BN(0);
 
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
@@ -685,9 +680,9 @@ contract("Stablescrow", (accounts) => {
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
-      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent.add(toAgent));
+      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
       expect(await erc20.balanceOf(seller)).to.eq.BN(
-        prevBalanceSeller.add(toAmount)
+        prevBalanceSeller.add(amount)
       );
       expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
 
@@ -712,10 +707,8 @@ contract("Stablescrow", (accounts) => {
       expect(BuyerCancel._sender, agent);
       expect(BuyerCancel._to, seller);
       const escrow = await tokenEscrow.escrows(id);
-      const toAgent = amount.mul(escrow.fee).div(BASE);
-      const toAmount = amount.sub(toAgent);
-      expect(BuyerCancel._toAmount).to.eq.BN(toAmount);
-      expect(BuyerCancel._toAgent).to.eq.BN(toAgent);
+      expect(BuyerCancel._toAmount).to.eq.BN(amount);
+      expect(BuyerCancel._toAgent).to.eq.BN(0);
 
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
@@ -726,10 +719,8 @@ contract("Stablescrow", (accounts) => {
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
-      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent.add(toAgent));
-      expect(await erc20.balanceOf(seller)).to.eq.BN(
-        prevBalanceSeller.add(toAmount)
-      );
+      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
+      expect(await erc20.balanceOf(seller)).to.eq.BN(amount);
       expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
 
       expect(escrow.balance).to.eq.BN(prevBalEscrow.sub(amount));

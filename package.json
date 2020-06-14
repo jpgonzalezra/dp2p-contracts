@@ -30,16 +30,17 @@
   },
   "homepage": "https://github.com/stablescrow/stablescrow",
   "devDependencies": {
-    "bn-chai": "^1.0.1",
-    "chai": "^4.2.0",
-    "eslint": "^4.19.1",
-    "eslint-config-standard": "^10.2.1",
-    "eslint-plugin-import": "^2.17.1",
-    "eslint-plugin-node": "^5.2.1",
-    "eslint-plugin-promise": "^3.8.0",
-    "eslint-plugin-standard": "^3.1.0",
+    "bn-chai": "1.0.1",
+    "chai": "4.2.0",
+    "eslint": "4.19.1",
+    "eslint-config-standard": "10.2.1",
+    "eslint-plugin-import": "2.17.1",
+    "eslint-plugin-node": "5.2.1",
+    "eslint-plugin-promise": "3.8.0",
+    "eslint-plugin-standard": "3.1.0",
     "ganache-cli": "^6.4.3",
-    "solium": "^1.2.4",
-    "truffle": "^5.0.12"
+    "solium": "1.2.4",
+    "truffle": "5.0.12",
+    "truffle-hdwallet-provider" : "1.0.17"
   }
 }

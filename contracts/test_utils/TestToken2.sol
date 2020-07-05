@@ -3,6 +3,7 @@ pragma solidity 0.6.4;
 
 import "../utils/SafeMath.sol";
 
+
 /*  ERC 20 token */
 contract StandardToken {
     using SafeMath for uint256;
@@ -13,21 +14,10 @@ contract StandardToken {
     // Temporarily change the ERC20 to indexed to match the ERC721 event
     // remove the indexed _value when the Truffle issue is fixed
     // ref https://github.com/trufflesuite/truffle/issues/2179
-    event Transfer(
-        address indexed _from,
-        address indexed _to,
-        uint256 indexed _value
-    );
-    event Approval(
-        address indexed _owner,
-        address indexed _spender,
-        uint256 indexed _value
-    );
+    event Transfer(address indexed _from, address indexed _to, uint256 indexed _value);
+    event Approval(address indexed _owner, address indexed _spender, uint256 indexed _value);
 
-    function transfer(address _to, uint256 _value)
-        public
-        returns (bool success)
-    {
+    function transfer(address _to, uint256 _value) public returns (bool success) {
         if (balances[msg.sender] >= _value) {
             balances[msg.sender] = balances[msg.sender].sub(_value);
             balances[_to] = balances[_to].add(_value);
@@ -38,11 +28,7 @@ contract StandardToken {
         }
     }
 
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _value
-    ) public returns (bool success) {
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value) {
             balances[_to] = balances[_to].add(_value);
             balances[_from] = balances[_from].sub(_value);
@@ -58,39 +44,24 @@ contract StandardToken {
         return balances[_owner];
     }
 
-    function approve(address _spender, uint256 _value)
-        public
-        returns (bool success)
-    {
+    function approve(address _spender,  uint256 _value) public returns (bool success) {
         allowed[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
         return true;
     }
 
-    function allowance(address _owner, address _spender)
-        public
-        view
-        returns (uint256 remaining)
-    {
+    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {
         return allowed[_owner][_spender];
     }
 
-    function increaseApproval(address _spender, uint256 _addedValue)
-        public
-        returns (bool success)
-    {
-        allowed[msg.sender][_spender] = allowed[msg.sender][_spender].add(
-            _addedValue
-        );
+    function increaseApproval (address _spender, uint _addedValue) public returns (bool success) {
+        allowed[msg.sender][_spender] = allowed[msg.sender][_spender].add(_addedValue);
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;
     }
 
-    function decreaseApproval(address _spender, uint256 _subtractedValue)
-        public
-        returns (bool success)
-    {
-        uint256 oldValue = allowed[msg.sender][_spender];
+    function decreaseApproval (address _spender, uint _subtractedValue) public returns (bool success) {
+        uint oldValue = allowed[msg.sender][_spender];
         if (_subtractedValue > oldValue) {
             allowed[msg.sender][_spender] = 0;
         } else {
@@ -100,8 +71,8 @@ contract StandardToken {
         return true;
     }
 
-    mapping(address => uint256) balances;
-    mapping(address => mapping(address => uint256)) allowed;
+    mapping (address => uint256) balances;
+    mapping (address => mapping (address => uint256)) allowed;
 }
 
 contract TestToken2 is StandardToken {
@@ -111,9 +82,9 @@ contract TestToken2 is StandardToken {
     uint256 public constant PRICE = 4000;
 
     // metadata
-    string public constant name = "Infinite Test Token 2";
+    string public constant name = "Infinite Test Token2";
     string public constant symbol = "TEST2";
-    uint8 public constant decimals = 18;
+    uint8 public constant decimals = 8;
     string public version = "1.1";
 
     event CreatedToken(address _address);
@@ -123,7 +94,7 @@ contract TestToken2 is StandardToken {
         emit CreatedToken(address(this));
     }
 
-    receive() external payable {
+    receive () external payable {
         buyTokens(msg.sender);
     }
 

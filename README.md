@@ -22,16 +22,10 @@ And in other console(in the same folder), run the tests with truffle:
 ## Ropsten
 
 ## TestToken1
-transaction hash:    0x0e61075d59be92ffb7896a7f4b7e6b96406cf1a531f652510394517810db4448
-contract address:    0x30A4C935cBf7F94271677Fca108af225566F8452
-account:             0xa975D1DE6d7dA3140E9e293509337373402558bE
+contract address:    0x437CC6f0AC72AF527392dcb26180C599de5EE96C
 
 ## TestToken2
-transaction hash:    0x0091bf758166060642c1588020efc3f5b1d0fdfb93c4d2bdbc1fe48eaf6fefec
-contract address:    0x2a28A3fa602CF891D2e219A4aB5f41DB59505223
-account:             0xa975D1DE6d7dA3140E9e293509337373402558bE
+contract address:    0x0fD021AE510bE9A9269245a3b5EA3f85aaFE6a48
 
 ## Stablescrow
-transaction hash:    0x2892071619cb12b3a9001d7a5955f3a2f50f518acc6f388aa21e889e72920c6f
-contract address:    0xCb67B1297B170153E433E215e1D51658728022Ea
-account:             0xa975D1DE6d7dA3140E9e293509337373402558bE
+contract address:    0x2baF30f5590de867fC1ae2c7ef5764Cbd0b7B318

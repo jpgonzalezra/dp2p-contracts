@@ -1,5 +1,4 @@
 const HDWalletProvider = require("truffle-hdwallet-provider");
-const MNEMONIC = "digital unknown jealous mother legal hedgehog save glory december universe spread figure custom found six"
 
 module.exports = {
   networks: {

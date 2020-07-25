@@ -1,9 +1,9 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./utils/Ownable.sol";
 import "./utils/SafeMath.sol";
-
 
 contract Stablescrow is Ownable {
     using SafeMath for uint256;
@@ -40,7 +40,7 @@ contract Stablescrow is Ownable {
     event BuyerCancel(bytes32 _id, uint256 _toAmount, uint256 _toAgent);
 
     event Cancel(bytes32 _id, uint256 _amount);
-    
+
     /// Platform events
 
     event SetFee(uint256 _fee);
@@ -89,9 +89,8 @@ contract Stablescrow is Ownable {
         require(_to != address(0), "platformWithdraw: address 0x is invalid");
         for (uint256 i = 0; i < _tokenAddresses.length; i++) {
             address tokenAddress = _tokenAddresses[i];
-            platformBalanceByToken[tokenAddress] = platformBalanceByToken[tokenAddress].sub(
-                _amount
-            );
+            platformBalanceByToken[tokenAddress] = platformBalanceByToken[tokenAddress]
+                .sub(_amount);
             require(
                 IERC20(tokenAddress).transfer(_to, _amount),
                 "platformWithdraw: Error transfer to platform"
@@ -249,11 +248,21 @@ contract Stablescrow is Ownable {
             msg.sender == escrow.buyer || msg.sender == escrow.agent,
             "buyerCancel: the sender should be the buyer or the agent"
         );
-        (uint256 toAmount, uint256 agentFee) = _withdraw(
-            _id,
-            escrow.seller,
-            escrow.balance
-        );
+        uint256 toAmount;
+        uint256 agentFee;
+        if (msg.sender == escrow.agent) {
+            (toAmount, agentFee) = _withdrawWithFee(
+                _id,
+                escrow.seller,
+                escrow.balance
+            );
+        } else {
+            (toAmount, agentFee) = _withdraw(
+                _id,
+                escrow.seller,
+                escrow.balance
+            );
+        }
         emit BuyerCancel(_id, toAmount, agentFee);
     }
 
@@ -306,7 +315,8 @@ contract Stablescrow is Ownable {
 
         /// Assign the fee amount to platform
         address tokenAddress = escrow.token;
-        platformBalanceByToken[tokenAddress] = platformBalanceByToken[tokenAddress].add(platformFee);
+        platformBalanceByToken[tokenAddress] = platformBalanceByToken[tokenAddress]
+            .add(platformFee);
 
         /// Assign the deposit amount to the escrow, subtracting the fee platform amount
         uint256 toEscrow = _amount.sub(platformFee);

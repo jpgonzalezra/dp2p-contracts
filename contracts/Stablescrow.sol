@@ -1,8 +1,8 @@
-pragma solidity 0.6.4;
+pragma solidity 0.6.2;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./utils/Ownable.sol";
 import "./utils/SafeMath.sol";
-import "./interfaces/IERC20.sol";
 
 
 contract Stablescrow is Ownable {
@@ -238,13 +238,12 @@ contract Stablescrow is Ownable {
     }
 
     /**
-        @notice Withdraw an amount from an escrow and the tokens  send to the seller address
+        @notice Withdraw an amount from an escrow and the tokens send to the seller address
         @dev the sender should be the buyer or the agent of the escrow
 
         @param _id The id of the escrow
-        @param _amount The base amount
     */
-    function buyerCancel(bytes32 _id, uint256 _amount) external {
+    function buyerCancel(bytes32 _id) external {
         Escrow storage escrow = escrows[_id];
         require(
             msg.sender == escrow.buyer || msg.sender == escrow.agent,
@@ -253,7 +252,7 @@ contract Stablescrow is Ownable {
         (uint256 toAmount, uint256 agentFee) = _withdraw(
             _id,
             escrow.seller,
-            _amount
+            escrow.balance
         );
         emit BuyerCancel(_id, toAmount, agentFee);
     }

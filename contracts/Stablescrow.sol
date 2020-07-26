@@ -45,7 +45,7 @@ contract Stablescrow is Ownable {
 
     event SetFee(uint256 _fee);
 
-    event NewAgent(address _agent);
+    event NewAgent(address _agent, uint256 _fee);
 
     event RemoveAgent(address _agent);
 
@@ -68,6 +68,7 @@ contract Stablescrow is Ownable {
 
     uint256 public fee;
     mapping(address => uint256) public platformBalanceByToken;
+    mapping(address => uint256) public agentFeeByAgentAddress;
 
     mapping(bytes32 => Escrow) public escrows;
     mapping(address => bool) public agents;
@@ -99,19 +100,33 @@ contract Stablescrow is Ownable {
         emit PlatformWithdraw(_tokenAddresses, _to, _amount);
     }
 
-    function newAgent(address _agent) external onlyOwner {
-        require(_agent != address(0), "newAgent: address 0x is invalid");
-        require(!agents[_agent], "newAgent: the agent alredy exists");
-        agents[_agent] = true;
-        emit NewAgent(_agent);
+    function newAgent(address _agentAddress, uint256 _fee) external onlyOwner {
+        require(_agentAddress != address(0), "newAgent: address 0x is invalid");
+        require(_fee > 0, "newAgent: the agent fee must be greater than 0");
+        require(
+            _fee <= MAX_AGENT_FEE,
+            "newAgent: The agent fee should be lower or equal than 1000"
+        );
+        require(!agents[_agentAddress], "newAgent: the agent alredy exists");
+        agents[_agentAddress] = true;
+        agentFeeByAgentAddress[_agentAddress] = _fee;
+        emit NewAgent(_agentAddress, fee);
     }
 
-    function removeAgent(address _agent) external onlyOwner {
-        require(_agent != address(0), "removeAgent: address 0x is invalid");
-        require(agents[_agent], "removeAgent: the agent does not exist");
-        agents[_agent] = false;
-        emit RemoveAgent(_agent);
+    function removeAgent(address _agentAddress) external onlyOwner {
+        require(
+            _agentAddress != address(0),
+            "removeAgent: address 0x is invalid"
+        );
+        require(agents[_agentAddress], "removeAgent: the agent does not exist");
+        agents[_agentAddress] = false;
+        delete agentFeeByAgentAddress[_agentAddress];
+        emit RemoveAgent(_agentAddress);
     }
+
+    // function bulkUpdateAgents(address[] agents, uint256[] fees) external onlyOwner {
+    //      TODO: implements
+    // }
 
     /// View functions
 
@@ -142,29 +157,22 @@ contract Stablescrow is Ownable {
     /**
         @notice Create an ERC20 escrow
             Fee: The ratio is expressed in order of BASE
-            Examples:
-            - 1% is 100
-            - 50.00% is 5000
-            - 23.45% is 2345
-            -----------------
-            - The agent will be the sender of the transaction
-            - The _fee should be lower than 1000(10%)
-
         @param _seller the seller address
         @param _buyer the buyer address
-        @param _fee the fee percentage (calculate in BASE), this fee will sent to the agent when the escrow is withdraw
-        @param _fee address token (DAI, USDC, WBTC, etc)
         @param _salt An entropy value, used to generate the id
         @return id of the escrow
     */
     function createEscrow(
         address _seller,
         address _buyer,
-        uint256 _fee,
         address _token,
         uint256 _salt
     ) external returns (bytes32 id) {
-        id = _createEscrow(msg.sender, _seller, _buyer, _fee, _token, _salt);
+        require(
+            msg.sender != _seller,
+            "createEscrow: the seller and sender must be different addresses"
+        );
+        id = _createEscrow(msg.sender, _seller, _buyer, _token, _salt);
     }
 
     /**
@@ -176,18 +184,17 @@ contract Stablescrow is Ownable {
         uint256 _amount,
         address _agent,
         address _buyer,
-        uint256 _fee,
         address _token,
         uint256 _salt
     ) external returns (bytes32 id) {
-        id = _createEscrow(_agent, msg.sender, _buyer, _fee, _token, _salt);
+        id = _createEscrow(_agent, msg.sender, _buyer, _token, _salt);
         _deposit(id, _amount);
     }
 
     /**
         @notice deposit an amount to escrow
         @dev the seller of the escrow should be the sender
-        @param _id the id of the escrow
+        @param _id escrow id
         @param _amount the amount to deposit in an escrow, with platform fee amount
     */
     function deposit(bytes32 _id, uint256 _amount) external {
@@ -237,10 +244,10 @@ contract Stablescrow is Ownable {
     }
 
     /**
-        @notice Withdraw an amount from an escrow and the tokens send to the seller address
+        @notice Withdraw an amount from an escrow and the tokens send to seller address
         @dev the sender should be the buyer or the agent of the escrow
 
-        @param _id The id of the escrow
+        @param _id escrow id
     */
     function buyerCancel(bytes32 _id) external {
         Escrow storage escrow = escrows[_id];
@@ -270,7 +277,7 @@ contract Stablescrow is Ownable {
         @notice cancel an escrow and send the escrow balance to the seller address
         @dev the sender should be the agent
         @dev the escrow will be deleted
-        @param _id the id of the escrow
+        @param _id escrow id
     */
     function cancel(bytes32 _id) external {
         Escrow storage escrow = escrows[_id];
@@ -329,21 +336,15 @@ contract Stablescrow is Ownable {
         address _agent,
         address _seller,
         address _buyer,
-        uint256 _fee,
         address _token,
         uint256 _salt
     ) internal returns (bytes32 id) {
         require(_token != address(0), "_createEscrow: address 0x is invalid");
-
-        require(
-            _fee <= MAX_AGENT_FEE,
-            "createEscrow: The agent fee should be lower or the same than 1000"
-        );
-
         require(agents[_agent], "createEscrow: the agent is invalid");
 
+        uint256 agentFee = agentFeeByAgentAddress[_agent];
         /// Calculate the escrow id
-        id = calculateId(_agent, _seller, _buyer, _fee, _token, _salt);
+        id = calculateId(_agent, _seller, _buyer, agentFee, _token, _salt);
 
         /// Check if the escrow was created
         require(
@@ -356,18 +357,18 @@ contract Stablescrow is Ownable {
             agent: _agent,
             seller: _seller,
             buyer: _buyer,
-            fee: _fee,
+            fee: agentFee,
             token: _token,
             balance: 0
         });
 
-        emit CreateEscrow(id, _agent, _seller, _buyer, _fee, _token, _salt);
+        emit CreateEscrow(id, _agent, _seller, _buyer, agentFee, _token, _salt);
     }
 
     /**
         @notice Withdraw an amount from an escrow without fee and send to _to address
         @dev The sender should be the _approved or the agent of the escrow
-        @param _id the id of the escrow
+        @param _id escrow id
         @param _to the address where the tokens will go
         @param _amount the base amount
     */
@@ -382,7 +383,7 @@ contract Stablescrow is Ownable {
     /**
         @notice Withdraw an amount from an escrow with fee and send to _to address
         @dev The sender should be the _approved or the agent of the escrow
-        @param _id the id of the escrow
+        @param _id escrow id
         @param _to the address where the tokens will go
         @param _amount the base amount
     */
@@ -397,7 +398,7 @@ contract Stablescrow is Ownable {
     /**
         @notice Withdraw an amount from an escrow and send to _to address
         @dev The sender should be the _approved or the agent of the escrow
-        @param _id the id of the escrow
+        @param _id escrow id
         @param _to the address where the tokens will go
         @param _amount the base amount
         @param _withFee to know if this operation has fee

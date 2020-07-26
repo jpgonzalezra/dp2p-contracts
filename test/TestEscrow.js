@@ -87,20 +87,21 @@ contract("Stablescrow", (accounts) => {
     await tokenEscrow.createEscrow(
       basicEscrow.seller,
       basicEscrow.buyer,
-      basicEscrow.fee,
       basicEscrow.token,
       basicEscrow.salt,
       { from: basicEscrow.agent }
     );
 
-    return calcId(
+    const fee = await tokenEscrow.agentFeeByAgentAddress(basicEscrow.agent)
+    const id = await calcId(
       basicEscrow.agent,
       basicEscrow.seller,
       basicEscrow.buyer,
-      basicEscrow.fee,
+      fee,
       basicEscrow.token,
       basicEscrow.salt
     );
+    return id
   };
 
   const deposit = async (id, amount = WEI) => {
@@ -112,7 +113,7 @@ contract("Stablescrow", (accounts) => {
   before("deploy contracts", async function () {
     erc20 = await TestToken.new({ from: owner });
     tokenEscrow = await Stablescrow.new({ from: owner });
-    await tokenEscrow.newAgent(agent, { from: owner });
+    await tokenEscrow.newAgent(agent, 500, { from: owner });
 
     await tokenEscrow.setPlatformFee(50, { from: owner });
     BASE = await tokenEscrow.BASE();
@@ -121,7 +122,6 @@ contract("Stablescrow", (accounts) => {
       agent,
       seller,
       buyer,
-      fee: 500,
       token: erc20.address,
       salt,
     };
@@ -265,11 +265,12 @@ contract("Stablescrow", (accounts) => {
   describe("createEscrow", function () {
     it("create basic escrow", async () => {
       const internalSalt = random32bn();
+      const agentFee = 500;
       const id = await calcId(
         agent,
         seller,
         buyer,
-        0,
+        agentFee,
         erc20.address,
         internalSalt
       );
@@ -278,7 +279,6 @@ contract("Stablescrow", (accounts) => {
         tokenEscrow.createEscrow(
           seller,
           buyer,
-          0,
           erc20.address,
           internalSalt,
           {
@@ -292,7 +292,7 @@ contract("Stablescrow", (accounts) => {
       expect(CreateEscrow._agent).to.equal(agent);
       expect(CreateEscrow._seller).to.equal(seller);
       expect(CreateEscrow._buyer).to.equal(buyer);
-      expect(CreateEscrow._fee).to.eq.BN(0);
+      expect(CreateEscrow._fee).to.eq.BN(agentFee);
       expect(CreateEscrow._token).to.equal(erc20.address);
       expect(CreateEscrow._salt).to.eq.BN(internalSalt);
 
@@ -300,7 +300,7 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
       expect(escrow.buyer, buyer);
-      expect(escrow.fee).to.eq.BN(0);
+      expect(escrow.fee).to.eq.BN(agentFee);
       expect(escrow.balance).to.eq.BN(0);
     });
     it("create two escrows with the same id", async function () {
@@ -309,42 +309,11 @@ contract("Stablescrow", (accounts) => {
           tokenEscrow.createEscrow(
             basicEscrow.seller,
             basicEscrow.buyer,
-            basicEscrow.fee,
             basicEscrow.token,
             basicEscrow.salt,
             { from: basicEscrow.agent }
           ),
         "createEscrow: The escrow exists"
-      );
-    });
-    it("set a higth agent fee(>10%)", async function () {
-      await tryCatchRevert(
-        () =>
-          tokenEscrow.createEscrow(
-            seller,
-            buyer,
-            1001,
-            erc20.address,
-            random32bn(),
-            {
-              from: creator,
-            }
-          ),
-        "createEscrow: The agent fee should be lower or the same than 1000"
-      );
-      await tryCatchRevert(
-        () =>
-          tokenEscrow.createEscrow(
-            seller,
-            buyer,
-            maxUint(256),
-            erc20.address,
-            random32bn(),
-            {
-              from: creator,
-            }
-          ),
-        "createEscrow: The agent fee should be lower or the same than 1000"
       );
     });
   });
@@ -363,14 +332,13 @@ contract("Stablescrow", (accounts) => {
         internalSalt
       );
       await updateBalances(id);
-      await tokenEscrow.newAgent(agent2, { from: owner });
+      await tokenEscrow.newAgent(agent2, 500, { from: owner });
 
       const Deposit = await toEvents(
         tokenEscrow.createAndDepositEscrow(
           amount,
           agent2,
           buyer,
-          500,
           erc20.address,
           internalSalt,
           {
@@ -905,20 +873,30 @@ contract("Stablescrow", (accounts) => {
   describe("newAgent", function () {
     it("new agent", async () => {
       await toEvents(
-        tokenEscrow.newAgent(accounts[9], { from: owner }),
+        tokenEscrow.newAgent(accounts[9], 500, { from: owner }),
         "NewAgent"
       );
     });
     it("already exist", async () => {
       await tryCatchRevert(
-        () => tokenEscrow.newAgent(accounts[9], { from: owner }),
+        () => tokenEscrow.newAgent(accounts[9], 500, { from: owner }),
         "newAgent: the agent alredy exists"
       );
     });
     it("invalid address", async () => {
       await tryCatchRevert(
-        () => tokenEscrow.newAgent(address0x, { from: owner }),
+        () => tokenEscrow.newAgent(address0x, 500, { from: owner }),
         "newAgent: address 0x is invalid"
+      );
+    });
+    it("set a higth agent fee(>10%)", async function () {
+      await tryCatchRevert(
+        () => tokenEscrow.newAgent(accounts[9], 1001, { from: owner }),
+        "newAgent: The agent fee should be lower or equal than 1000"
+      );
+      await tryCatchRevert(
+        () => tokenEscrow.newAgent(accounts[9], maxUint(256), { from: owner }),
+        "newAgent: The agent fee should be lower or equal than 1000"
       );
     });
   });

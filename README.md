@@ -22,10 +22,10 @@ And in other console(in the same folder), run the tests with truffle:
 ## Ropsten
 
 ## TestToken1
-contract address:    0x437CC6f0AC72AF527392dcb26180C599de5EE96C
+contract address:    0xDa7997a88b9609e399573bC1A2AC3BF9071ac6A1
 
 ## TestToken2
-contract address:    0x0fD021AE510bE9A9269245a3b5EA3f85aaFE6a48
+contract address:    0x7Ff76a2739782b716d280788d05a54e142550723
 
 ## Stablescrow
-contract address:    0x2baF30f5590de867fC1ae2c7ef5764Cbd0b7B318
+contract address:    0x0557961Ea51690769a2E505853719135d3cAf2e2

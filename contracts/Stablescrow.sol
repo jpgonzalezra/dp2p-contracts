@@ -207,7 +207,7 @@ contract Stablescrow is Ownable {
             msg.sender == escrow.agent || msg.sender == _owner,
             "resolveDispute: the sender should be the agent or owner"
         );
-        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
+        (uint256 toAmount, uint256 agentFee) = _withdraw(
             _id,
             escrow.buyer,
             _amount
@@ -233,21 +233,11 @@ contract Stablescrow is Ownable {
             msg.sender == escrow.buyer || msg.sender == escrow.agent,
             "buyerCancel: the sender should be the buyer or the agent"
         );
-        uint256 toAmount;
-        uint256 agentFee;
-        if (msg.sender == escrow.agent) {
-            (toAmount, agentFee) = _withdrawWithFee(
-                _id,
-                escrow.seller,
-                escrow.balance
-            );
-        } else {
-            (toAmount, agentFee) = _withdraw(
-                _id,
-                escrow.seller,
-                escrow.balance
-            );
-        }
+        (uint256 toAmount, uint256 agentFee) = _withdraw(
+            _id,
+            escrow.seller,
+            escrow.balance
+        );
         emit BuyerCancel(_id, toAmount, agentFee);
     }
 
@@ -311,7 +301,7 @@ contract Stablescrow is Ownable {
             "deposit: The sender should be the seller"
         );
 
-        uint256 platformFee = _feeAmount(_amount, fee);
+        uint256 platformFee = _feeAmount(_amount, escrows[_id].plataformFee);
 
         /// Transfer the tokens
         IERC20 token = IERC20(escrow.token);
@@ -363,37 +353,16 @@ contract Stablescrow is Ownable {
             balance: 0
         });
 
-        emit CreateEscrow(id, _agent, _seller, _buyer, agentFee, fee, _token, _salt);
-    }
-
-    /**
-        @notice Withdraw an amount from an escrow without fee and send to _to address
-        @dev The sender should be the _approved or the agent of the escrow
-        @param _id escrow id
-        @param _to the address where the tokens will go
-        @param _amount the base amount
-    */
-    function _withdraw(
-        bytes32 _id,
-        address _to,
-        uint256 _amount
-    ) internal returns (uint256 toAmount, uint256 agentFee) {
-        return _withdraw(_id, _to, _amount, false);
-    }
-
-    /**
-        @notice Withdraw an amount from an escrow with fee and send to _to address
-        @dev The sender should be the _approved or the agent of the escrow
-        @param _id escrow id
-        @param _to the address where the tokens will go
-        @param _amount the base amount
-    */
-    function _withdrawWithFee(
-        bytes32 _id,
-        address _to,
-        uint256 _amount
-    ) internal returns (uint256 toAmount, uint256 agentFee) {
-        return _withdraw(_id, _to, _amount, true);
+        emit CreateEscrow(
+            id,
+            _agent,
+            _seller,
+            _buyer,
+            agentFee,
+            fee,
+            _token,
+            _salt
+        );
     }
 
     /**
@@ -402,25 +371,22 @@ contract Stablescrow is Ownable {
         @param _id escrow id
         @param _to the address where the tokens will go
         @param _amount the base amount
-        @param _withFee to know if this operation has fee
     */
     function _withdraw(
         bytes32 _id,
         address _to,
-        uint256 _amount,
-        bool _withFee
+        uint256 _amount
     ) internal returns (uint256 toAmount, uint256 agentFee) {
         Escrow storage escrow = escrows[_id];
         IERC20 token = IERC20(escrow.token);
 
         if (msg.sender == _owner) {
+            /// the withdrawn was executed for plataform.
+            /// the agent does not earn interest
             toAmount = _amount;
         } else {
             /// calculate the fee
-            agentFee = 0;
-            if (_withFee) {
-                agentFee = _feeAmount(_amount, escrow.fee);
-            }
+            agentFee = _feeAmount(_amount, escrow.fee);
             /// update escrow balance in storage
             escrow.balance = escrow.balance.sub(_amount);
             /// send fee to the agent
@@ -439,10 +405,9 @@ contract Stablescrow is Ownable {
     }
 
     /**
-        @notice fee amount calculation
-        @dev Formula: _amount * _fee / BASE
-        @param _amount The base amount
-        @param _fee The fee
+        @notice calculate fee amount
+        @param _amount base amount
+        @param _fee escrow agent fee
         @return calculated fee
     */
     function _feeAmount(uint256 _amount, uint256 _fee)

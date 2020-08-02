@@ -58,16 +58,15 @@ contract("Stablescrow", (accounts) => {
     );
   };
 
-  const calcId = async (_agent, _seller, _buyer, _fee, _token, _salt) => {
-    const id = await tokenEscrow.calculateId(
-      _agent,
-      _seller,
-      _buyer,
-      _fee,
-      _token,
-      _salt
-    );
-    const localId = web3.utils.soliditySha3(
+  const calcId = async (
+    _agent,
+    _seller,
+    _buyer,
+    _fee,
+    _token,
+    _salt
+  ) =>
+    web3.utils.soliditySha3(
       { t: "address", v: tokenEscrow.address },
       { t: "address", v: _agent },
       { t: "address", v: _seller },
@@ -76,10 +75,6 @@ contract("Stablescrow", (accounts) => {
       { t: "address", v: _token },
       { t: "uint256", v: _salt }
     );
-
-    expect(id).to.equal(localId);
-    return id;
-  };
 
   const createBasicEscrow = async () => {
     basicEscrow.salt = ++salt;
@@ -92,7 +87,7 @@ contract("Stablescrow", (accounts) => {
       { from: basicEscrow.agent }
     );
 
-    const fee = await tokenEscrow.agentFeeByAgentAddress(basicEscrow.agent)
+    const fee = await tokenEscrow.agentFeeByAgentAddress(basicEscrow.agent);
     const id = await calcId(
       basicEscrow.agent,
       basicEscrow.seller,
@@ -101,7 +96,7 @@ contract("Stablescrow", (accounts) => {
       basicEscrow.token,
       basicEscrow.salt
     );
-    return id
+    return id;
   };
 
   const deposit = async (id, amount = WEI) => {

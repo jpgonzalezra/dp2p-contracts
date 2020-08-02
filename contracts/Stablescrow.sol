@@ -128,30 +128,6 @@ contract Stablescrow is Ownable {
     //      TODO: implements
     // }
 
-    /// View functions
-
-    function calculateId(
-        address _agent,
-        address _seller,
-        address _buyer,
-        uint256 _fee,
-        address _token,
-        uint256 _salt
-    ) public view returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked(
-                    address(this),
-                    _agent,
-                    _seller,
-                    _buyer,
-                    _fee,
-                    _token,
-                    _salt
-                )
-            );
-    }
-
     /// External functions
 
     /**
@@ -304,6 +280,28 @@ contract Stablescrow is Ownable {
 
     /// Internal functions
 
+    function _calculateId(
+        address _agent,
+        address _seller,
+        address _buyer,
+        uint256 _fee,
+        address _token,
+        uint256 _salt
+    ) internal view returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    address(this),
+                    _agent,
+                    _seller,
+                    _buyer,
+                    _fee,
+                    _token,
+                    _salt
+                )
+            );
+    }
+
     function _deposit(bytes32 _id, uint256 _amount) internal {
         Escrow storage escrow = escrows[_id];
         require(
@@ -342,9 +340,9 @@ contract Stablescrow is Ownable {
         require(_token != address(0), "_createEscrow: address 0x is invalid");
         require(agents[_agent], "createEscrow: the agent is invalid");
 
-        uint256 agentFee = agentFeeByAgentAddress[_agent];
         /// Calculate the escrow id
-        id = calculateId(_agent, _seller, _buyer, agentFee, _token, _salt);
+        uint256 agentFee = agentFeeByAgentAddress[_agent];
+        id = _calculateId(_agent, _seller, _buyer, agentFee, _token, _salt);
 
         /// Check if the escrow was created
         require(
@@ -352,7 +350,7 @@ contract Stablescrow is Ownable {
             "createEscrow: The escrow exists"
         );
 
-        /// Add escrow to the escrows array
+        /// Add escrow
         escrows[id] = Escrow({
             agent: _agent,
             seller: _seller,

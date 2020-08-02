@@ -71,7 +71,7 @@ contract("Stablescrow", (accounts) => {
       { t: "address", v: _agent },
       { t: "address", v: _seller },
       { t: "address", v: _buyer },
-      { t: "uint256", v: _fee },
+      { t: "uint32", v: _fee },
       { t: "address", v: _token },
       { t: "uint256", v: _salt }
     );

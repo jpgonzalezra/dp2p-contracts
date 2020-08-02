@@ -15,6 +15,7 @@ contract Stablescrow is Ownable {
         address _seller,
         address _buyer,
         uint256 _fee,
+        uint256 _plataformFee,
         address _token,
         uint256 _salt
     );
@@ -55,7 +56,8 @@ contract Stablescrow is Ownable {
         address agent;
         address seller;
         address buyer;
-        uint256 fee;
+        uint32 fee;
+        uint32 plataformFee;
         uint256 balance;
         address token;
     }
@@ -284,7 +286,7 @@ contract Stablescrow is Ownable {
         address _agent,
         address _seller,
         address _buyer,
-        uint256 _fee,
+        uint256 _agentFee,
         address _token,
         uint256 _salt
     ) internal view returns (bytes32) {
@@ -295,7 +297,7 @@ contract Stablescrow is Ownable {
                     _agent,
                     _seller,
                     _buyer,
-                    _fee,
+                    uint32(_agentFee),
                     _token,
                     _salt
                 )
@@ -355,12 +357,13 @@ contract Stablescrow is Ownable {
             agent: _agent,
             seller: _seller,
             buyer: _buyer,
-            fee: agentFee,
+            fee: uint32(agentFee),
+            plataformFee: uint32(fee),
             token: _token,
             balance: 0
         });
 
-        emit CreateEscrow(id, _agent, _seller, _buyer, agentFee, _token, _salt);
+        emit CreateEscrow(id, _agent, _seller, _buyer, agentFee, fee, _token, _salt);
     }
 
     /**

@@ -22,7 +22,7 @@ library SafeMath {
         }
 
         uint256 z = x * y;
-        require(z/x == y, "Mul overflow");
+        require(z / x == y, "Mul overflow");
         return z;
     }
 
@@ -30,5 +30,4 @@ library SafeMath {
         require(y != 0, "Div by zero");
         return x / y;
     }
-
 }

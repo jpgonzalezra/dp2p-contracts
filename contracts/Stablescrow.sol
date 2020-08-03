@@ -2,8 +2,10 @@
 pragma solidity 0.6.2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/cryptography/ECDSA.sol";
 import "./utils/Ownable.sol";
 import "./utils/SafeMath.sol";
+
 
 contract Stablescrow is Ownable {
     using SafeMath for uint256;
@@ -23,6 +25,14 @@ contract Stablescrow is Ownable {
     event Deposit(bytes32 _id, uint256 _toEscrow, uint256 _toPlatform);
 
     event Release(
+        bytes32 _id,
+        address _sender,
+        address _to,
+        uint256 _toAmount,
+        uint256 _toAgent
+    );
+
+    event ReleaseWithAgentSignature(
         bytes32 _id,
         address _sender,
         address _to,
@@ -195,6 +205,36 @@ contract Stablescrow is Ownable {
             _amount
         );
         emit Release(_id, escrow.seller, escrow.buyer, toAmount, agentFee);
+    }
+
+    function releaseWithAgentSignature(
+        bytes32 _id,
+        uint256 _amount,
+        bytes calldata _agentSignature
+    ) external {
+        Escrow storage escrow = escrows[_id];
+        require(
+            msg.sender == escrow.buyer &&
+                escrow.agent ==
+                ECDSA.recover(
+                    ECDSA.toEthSignedMessageHash(_id),
+                    _agentSignature
+                ),
+            "releaseWithAgentSignature: invalid sender or invalid agent signature"
+        );
+
+        (uint256 toAmount, uint256 agentFee) = _withdraw(
+            _id,
+            escrow.buyer,
+            _amount
+        );
+        emit ReleaseWithAgentSignature(
+            _id,
+            escrow.seller,
+            escrow.buyer,
+            toAmount,
+            agentFee
+        );
     }
 
     /**
@@ -416,5 +456,27 @@ contract Stablescrow is Ownable {
         returns (uint256)
     {
         return _amount.mul(_fee).div(BASE);
+    }
+
+    function _ecrecovery(bytes32 _hash, bytes memory _sig)
+        internal
+        pure
+        returns (address)
+    {
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        assembly {
+            r := mload(add(_sig, 32))
+            s := mload(add(_sig, 64))
+            v := and(mload(add(_sig, 65)), 255)
+        }
+
+        if (v < 27) {
+            v += 27;
+        }
+
+        return ecrecover(_hash, v, r, s);
     }
 }

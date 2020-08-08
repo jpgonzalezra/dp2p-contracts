@@ -255,7 +255,7 @@ contract Stablescrow is Ownable {
             msg.sender == escrow.buyer,
             "buyerCancel: the sender should be the buyer"
         );
-        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
+        (uint256 toAmount, uint256 agentFee) = _withdrawWithoutFee(
             _id,
             escrow.seller,
             escrow.balance
@@ -396,6 +396,13 @@ contract Stablescrow is Ownable {
         return _withdraw(_id, _to, _amount, true);
     }
 
+    function _withdrawWithoutFee(
+        bytes32 _id,
+        address _to,
+        uint256 _amount
+    ) internal returns (uint256 toAmount, uint256 agentFee) {
+        return _withdraw(_id, _to, _amount, false);
+    }
     /**
         @notice Withdraw an amount from an escrow and send to _to address
         @dev The sender should be the _approved or the agent of the escrow

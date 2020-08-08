@@ -241,7 +241,7 @@ contract("Stablescrow", (accounts) => {
     it("withdraw to seller non-escrow", async () => {
       await tryCatchRevert(
         () => tokenEscrow.buyerCancel(random32(), { from: agent }),
-        "buyerCancel: the sender should be the buyer or the agent"
+        "buyerCancel: the sender should be the buyer"
       );
     });
     it("cancel an escrow non-existent", async () => {
@@ -495,7 +495,7 @@ contract("Stablescrow", (accounts) => {
       );
     });
   });
-  describe("release", function () {
+  describe.only("release", function () {
     it("release escrow from seller", async () => {
       const id = await createBasicEscrow();
       await deposit(id);
@@ -803,67 +803,25 @@ contract("Stablescrow", (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it.skip("buyerCancel by the agent", async () => {
-      const id = await createBasicEscrow();
-
-      await deposit(id);
-      await updateBalances(id);
-
-      const prevSellerBalance = await erc20.balanceOf(seller);
-      const BuyerCancel = await toEvents(
-        tokenEscrow.buyerCancel(id, { from: agent }),
-        "BuyerCancel"
-      );
-      const currentSellerBalance = await erc20.balanceOf(seller);
-      const amount = currentSellerBalance.sub(prevSellerBalance);
-
-      expect(BuyerCancel._id, id);
-      expect(BuyerCancel._sender, agent);
-      expect(BuyerCancel._to, seller);
-      const escrow = await tokenEscrow.escrows(id);
-      expect(BuyerCancel._toAmount).to.eq.BN(amount);
-      const toAgent = amount.mul(escrow.fee).div(BASE);
-      expect(BuyerCancel._toAgent).to.eq.BN(toAgent);
-
-      expect(escrow.agent, agent);
-      expect(escrow.seller, seller);
-      expect(escrow.buyer, buyer);
-      expect(escrow.fee).to.eq.BN(500);
-
-      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
-        prevPlatformBalance
-      );
-
-      expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
-      expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
-      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
-      expect(await erc20.balanceOf(seller)).to.eq.BN(amount);
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
-
-      expect(escrow.balance).to.eq.BN(prevBalEscrow.sub(amount));
-      expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
-        prevBalTokenEscrow.sub(amount)
-      );
-    });
-    it("buyerCancel without being the buyer or the agent", async () => {
+    it("buyerCancel without being the buyer", async () => {
       const id = await createBasicEscrow();
 
       await tryCatchRevert(
         () => tokenEscrow.buyerCancel(id, { from: seller }),
-        "buyerCancel: the sender should be the buyer or the agent"
+        "buyerCancel: the sender should be the buyer"
       );
 
       await tryCatchRevert(
         () => tokenEscrow.buyerCancel(id, { from: creator }),
-        "buyerCancel: the sender should be the buyer or the agent"
+        "buyerCancel: the sender should be the buyer"
       );
     });
   });
   describe("cancel", function () {
     it("agent cancel an escrow", async () => {
       const id = await createBasicEscrow();
+      
       await deposit(id);
-
       await updateBalances(id);
 
       const Cancel = await toEvents(

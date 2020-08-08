@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/cryptography/ECDSA.sol";
 import "./utils/Ownable.sol";
 import "./utils/SafeMath.sol";
 
-
 contract Stablescrow is Ownable {
     using SafeMath for uint256;
 
@@ -21,9 +20,7 @@ contract Stablescrow is Ownable {
         address _token,
         uint256 _salt
     );
-
     event Deposit(bytes32 _id, uint256 _toEscrow, uint256 _toPlatform);
-
     event Release(
         bytes32 _id,
         address _sender,
@@ -31,7 +28,6 @@ contract Stablescrow is Ownable {
         uint256 _toAmount,
         uint256 _toAgent
     );
-
     event ReleaseWithAgentSignature(
         bytes32 _id,
         address _sender,
@@ -39,7 +35,6 @@ contract Stablescrow is Ownable {
         uint256 _toAmount,
         uint256 _toAgent
     );
-
     event DisputeResolved(
         bytes32 _id,
         address _sender,
@@ -47,19 +42,13 @@ contract Stablescrow is Ownable {
         uint256 _toAmount,
         uint256 _toAgent
     );
-
     event BuyerCancel(bytes32 _id, uint256 _toAmount, uint256 _toAgent);
-
     event Cancel(bytes32 _id, uint256 _amount);
 
     /// Platform events
-
     event SetFee(uint256 _fee);
-
     event NewAgent(address _agent, uint256 _fee);
-
     event RemoveAgent(address _agent);
-
     event PlatformWithdraw(address[] _tokens, address _to, uint256 _amount);
 
     struct Escrow {
@@ -72,16 +61,13 @@ contract Stablescrow is Ownable {
         address token;
     }
 
-    /// 10000 ==  100%
-    ///   505 == 5.05%
     uint256 public constant BASE = 10000;
     uint256 public constant MAX_FEE = 50;
     uint256 public constant MAX_AGENT_FEE = 1000;
-
     uint256 public fee;
+
     mapping(address => uint256) public platformBalanceByToken;
     mapping(address => uint256) public agentFeeByAgentAddress;
-
     mapping(bytes32 => Escrow) public escrows;
     mapping(address => bool) public agents;
 
@@ -135,10 +121,6 @@ contract Stablescrow is Ownable {
         delete agentFeeByAgentAddress[_agentAddress];
         emit RemoveAgent(_agentAddress);
     }
-
-    // function bulkUpdateAgents(address[] agents, uint256[] fees) external onlyOwner {
-    //      TODO: implements
-    // }
 
     /// External functions
 
@@ -199,7 +181,7 @@ contract Stablescrow is Ownable {
             msg.sender == escrow.seller,
             "release: the sender should be the seller"
         );
-        (uint256 toAmount, uint256 agentFee) = _withdraw(
+        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
             _id,
             escrow.buyer,
             _amount
@@ -223,7 +205,7 @@ contract Stablescrow is Ownable {
             "releaseWithAgentSignature: invalid sender or invalid agent signature"
         );
 
-        (uint256 toAmount, uint256 agentFee) = _withdraw(
+        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
             _id,
             escrow.buyer,
             _amount
@@ -247,7 +229,7 @@ contract Stablescrow is Ownable {
             msg.sender == escrow.agent || msg.sender == _owner,
             "resolveDispute: the sender should be the agent or owner"
         );
-        (uint256 toAmount, uint256 agentFee) = _withdraw(
+        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
             _id,
             escrow.buyer,
             _amount
@@ -263,17 +245,17 @@ contract Stablescrow is Ownable {
 
     /**
         @notice Withdraw an amount from an escrow and the tokens send to seller address
-        @dev the sender should be the buyer or the agent of the escrow
+        @dev the sender should be the buyer of the escrow
 
         @param _id escrow id
     */
     function buyerCancel(bytes32 _id) external {
         Escrow storage escrow = escrows[_id];
         require(
-            msg.sender == escrow.buyer || msg.sender == escrow.agent,
-            "buyerCancel: the sender should be the buyer or the agent"
+            msg.sender == escrow.buyer,
+            "buyerCancel: the sender should be the buyer"
         );
-        (uint256 toAmount, uint256 agentFee) = _withdraw(
+        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
             _id,
             escrow.seller,
             escrow.balance
@@ -291,22 +273,23 @@ contract Stablescrow is Ownable {
         Escrow storage escrow = escrows[_id];
         require(
             msg.sender == escrow.agent || msg.sender == _owner,
-            "cancel: the sender should be the agent"
+            "cancel: the sender should be the agent or plataform"
         );
 
         uint256 balance = escrow.balance;
         address seller = escrow.seller;
         IERC20 token = IERC20(escrow.token);
+
         /// Delete escrow
         delete escrows[_id];
 
-        /// Send the tokens to the seller if the escrow have balance
-        if (balance > 0)
+        /// transfer tokens to the seller just if the escrow has balance
+        if (balance > 0) {
             require(
                 token.transfer(seller, balance),
                 "cancel: error transfer to the seller"
             );
-
+        }
         emit Cancel(_id, balance);
     }
 
@@ -405,6 +388,14 @@ contract Stablescrow is Ownable {
         );
     }
 
+    function _withdrawWithFee(
+        bytes32 _id,
+        address _to,
+        uint256 _amount
+    ) internal returns (uint256 toAmount, uint256 agentFee) {
+        return _withdraw(_id, _to, _amount, true);
+    }
+
     /**
         @notice Withdraw an amount from an escrow and send to _to address
         @dev The sender should be the _approved or the agent of the escrow
@@ -415,16 +406,19 @@ contract Stablescrow is Ownable {
     function _withdraw(
         bytes32 _id,
         address _to,
-        uint256 _amount
+        uint256 _amount,
+        bool _withAgentFee
     ) internal returns (uint256 toAmount, uint256 agentFee) {
         Escrow storage escrow = escrows[_id];
         IERC20 token = IERC20(escrow.token);
 
         if (msg.sender == _owner) {
-            /// the withdrawn was executed for plataform.
-            /// the agent does not earn interest
+            // plataform should not pay fee (override withFee to false)
+            _withAgentFee = false;
             toAmount = _amount;
-        } else {
+        }
+
+        if (_withAgentFee) {
             /// calculate the fee
             agentFee = _feeAmount(_amount, escrow.fee);
             /// update escrow balance in storage
@@ -437,7 +431,9 @@ contract Stablescrow is Ownable {
             /// substract the agent fee
             toAmount = _amount.sub(agentFee);
         }
-        /// send amount to the _to
+        /// update escrow balance in storage
+        escrow.balance = escrow.balance.sub(toAmount);
+        /// send amount to `_to` address
         require(
             token.transfer(_to, toAmount),
             "_withdraw: Error transfer to the _to"

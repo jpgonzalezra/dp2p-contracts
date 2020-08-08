@@ -758,8 +758,8 @@ contract("Stablescrow", (accounts) => {
       );
     });
   });
-  describe("buyerCancel", function () {
-    it.skip("buyerCancel by the buyer", async () => {
+  describe.only("buyerCancel", function () {
+    it("buyerCancel by the buyer", async () => {
       const id = await createBasicEscrow();
       await deposit(id);
       await updateBalances(id);

@@ -421,15 +421,14 @@ contract Stablescrow is Ownable {
         if (_withAgentFee) {
             /// calculate the fee
             agentFee = _feeAmount(_amount, escrow.fee);
-            /// update escrow balance in storage
-            escrow.balance = escrow.balance.sub(_amount);
+            /// substract the agent fee
+            escrow.balance = escrow.balance.sub(agentFee);
+            toAmount = _amount.sub(agentFee);
             /// send fee to the agent
             require(
                 token.transfer(escrow.agent, agentFee),
                 "_withdraw: Error transfer tokens to the agent"
             );
-            /// substract the agent fee
-            toAmount = _amount.sub(agentFee);
         }
         /// update escrow balance in storage
         escrow.balance = escrow.balance.sub(toAmount);

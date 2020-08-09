@@ -9,7 +9,7 @@ module.exports = {
     },
     ropsten: {
       provider: function() {
-        return new HDWalletProvider("0x6365b6515d20004503c3d6e87226880c9903f17283d9cd4ee4d02c90b3f2b5b0", "https://ropsten.infura.io/v3/f039330d8fb747e48a7ce98f51400d65")
+        return new HDWalletProvider("0x36797df5163dda5138253414fc3918ab3a352165261de2fea109a68ee84b4110", "https://ropsten.infura.io/v3/f039330d8fb747e48a7ce98f51400d65")
       },
       gasPrice: 90000000000,
       network_id: 3

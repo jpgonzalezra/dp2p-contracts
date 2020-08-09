@@ -431,25 +431,4 @@ contract Stablescrow is Ownable {
         return _amount.mul(_fee).div(BASE);
     }
 
-    function _ecrecovery(bytes32 _hash, bytes memory _sig)
-        internal
-        pure
-        returns (address)
-    {
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
-        assembly {
-            r := mload(add(_sig, 32))
-            s := mload(add(_sig, 64))
-            v := and(mload(add(_sig, 65)), 255)
-        }
-
-        if (v < 27) {
-            v += 27;
-        }
-
-        return ecrecover(_hash, v, r, s);
-    }
 }

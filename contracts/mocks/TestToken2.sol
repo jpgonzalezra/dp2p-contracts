@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 // mock class using ERC20
 contract TestToken1 is ERC20 {
     constructor() public payable ERC20("Test2", "TEST2") {
-        _setupDecimals(8);
+        _setupDecimals(6);
     }
 
     function mint(address account, uint256 amount) public {

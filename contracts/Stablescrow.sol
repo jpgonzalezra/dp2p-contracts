@@ -388,6 +388,7 @@ contract Stablescrow is Ownable {
         bool _withAgentFee
     ) internal returns (uint256 toAmount, uint256 agentFee) {
         Escrow storage escrow = escrows[_id];
+        require(escrow.balance > 0, "_withdraw: The escrow has not balance");
         IERC20 token = IERC20(escrow.token);
 
         if (msg.sender == _owner) {

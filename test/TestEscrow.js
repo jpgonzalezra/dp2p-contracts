@@ -535,7 +535,7 @@ contract("Stablescrow", (accounts) => {
     });
     it("release invalid amount (0)", async () => {
       const id = await createBasicEscrow();
-      
+
       const amount = bn(0);
 
       await updateBalances(id);
@@ -593,7 +593,7 @@ contract("Stablescrow", (accounts) => {
   describe("releaseWithAgentSignature", function () {
     it("release escrow from buyer with agent signature", async () => {
       const id = await createBasicEscrow();
-      
+
       const amount = WEI.div(bn(2));
       await updateBalances(id);
 
@@ -638,9 +638,26 @@ contract("Stablescrow", (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
+    it("try to release escrow from buyer with incorrect agent signature", async () => {
+      const id = await createBasicEscrow();
+
+      const amount = WEI.div(bn(2));
+      await updateBalances(id);
+
+      const agentSignature = fixSignature(
+        await web3.eth.sign("incorrect agent signatura", basicEscrow.agent)
+      );
+      await tryCatchRevert(
+        () =>
+          tokenEscrow.releaseWithAgentSignature(id, amount, agentSignature, {
+            from: buyer,
+          }),
+        "releaseWithAgentSignature: invalid sender or invalid agent signature"
+      );
+    });
     it("revert release escrow, signature invalid (buyer sign)", async () => {
       const id = await createBasicEscrow();
-      
+
       const amount = WEI.div(bn(2));
       await updateBalances(id);
 
@@ -657,7 +674,7 @@ contract("Stablescrow", (accounts) => {
     });
     it("revert release escrow, the signature was correct but the sender was not buyer", async () => {
       const id = await createBasicEscrow();
-      
+
       const amount = WEI.div(bn(2));
       await updateBalances(id);
 
@@ -676,7 +693,7 @@ contract("Stablescrow", (accounts) => {
   describe("resolveDispute", function () {
     it("resolveDispute from agent", async () => {
       const id = await createBasicEscrow();
-      
+
       const amount = WEI.div(bn(2));
 
       await updateBalances(id);
@@ -719,7 +736,7 @@ contract("Stablescrow", (accounts) => {
     });
     it("resolveDispute from owner", async () => {
       const id = await createBasicEscrow();
-      
+
       const amount = WEI.div(bn(2));
 
       await updateBalances(id);
@@ -807,7 +824,6 @@ contract("Stablescrow", (accounts) => {
     it("agent cancel an escrow", async () => {
       const id = await createBasicEscrow();
 
-      
       await updateBalances(id);
 
       const Cancel = await toEvents(

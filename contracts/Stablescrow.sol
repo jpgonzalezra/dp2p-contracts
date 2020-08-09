@@ -125,30 +125,10 @@ contract Stablescrow is Ownable {
     /// External functions
 
     /**
-        @notice Create an ERC20 escrow
-            Fee: The ratio is expressed in order of BASE
-        @param _seller the seller address
-        @param _buyer the buyer address
-        @param _salt An entropy value, used to generate the id
-        @return id of the escrow
-    */
-    function createEscrow(
-        address _seller,
-        address _buyer,
-        address _token,
-        uint256 _salt
-    ) external returns (bytes32 id) {
-        require(
-            msg.sender != _seller,
-            "createEscrow: the seller and sender must be different addresses"
-        );
-        id = _createEscrow(msg.sender, _seller, _buyer, _token, _salt);
-    }
-
-    /**
-        @notice deposit an amount in escrown after that create this
+        @notice deposit an amount in the escrow after creating this
         @dev create and deposit operation in one transaction,
              the seller of the escrow should be the sender
+        @return id of the escrow
     */
     function createAndDepositEscrow(
         uint256 _amount,
@@ -159,16 +139,6 @@ contract Stablescrow is Ownable {
     ) external returns (bytes32 id) {
         id = _createEscrow(_agent, msg.sender, _buyer, _token, _salt);
         _deposit(id, _amount);
-    }
-
-    /**
-        @notice deposit an amount to escrow
-        @dev the seller of the escrow should be the sender
-        @param _id escrow id
-        @param _amount the amount to deposit in an escrow, with platform fee amount
-    */
-    function deposit(bytes32 _id, uint256 _amount) external {
-        _deposit(_id, _amount);
     }
 
     /**
@@ -352,7 +322,7 @@ contract Stablescrow is Ownable {
         address _token,
         uint256 _salt
     ) internal returns (bytes32 id) {
-        require(_token != address(0), "_createEscrow: address 0x is invalid");
+        require(_token != address(0), "createEscrow: address 0x is invalid");
         require(agents[_agent], "createEscrow: the agent is invalid");
 
         /// Calculate the escrow id
@@ -403,6 +373,7 @@ contract Stablescrow is Ownable {
     ) internal returns (uint256 toAmount, uint256 agentFee) {
         return _withdraw(_id, _to, _amount, false);
     }
+
     /**
         @notice Withdraw an amount from an escrow and send to _to address
         @dev The sender should be the _approved or the agent of the escrow

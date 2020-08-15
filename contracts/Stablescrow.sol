@@ -64,20 +64,20 @@ contract Stablescrow is Ownable {
     uint256 public constant BASE = 10000;
     uint256 public constant MAX_FEE = 50;
     uint256 public constant MAX_AGENT_FEE = 1000;
-    uint256 public fee;
+    uint32 public plataformFee;
 
     mapping(address => uint256) public platformBalanceByToken;
     mapping(address => uint256) public agentFeeByAgentAddress;
     mapping(bytes32 => Escrow) public escrows;
     mapping(address => bool) public agents;
 
-    function setPlatformFee(uint256 _fee) external onlyOwner {
+    function setPlatformFee(uint32 _plataformFee) external onlyOwner {
         require(
-            _fee <= MAX_FEE,
+            _plataformFee <= MAX_FEE,
             "setPlatformFee: The platform fee should be lower than the MAX_FEE"
         );
-        fee = _fee;
-        emit SetFee(_fee);
+        plataformFee = _plataformFee;
+        emit SetFee(_plataformFee);
     }
 
     function platformWithdraw(
@@ -108,7 +108,7 @@ contract Stablescrow is Ownable {
         require(!agents[_agentAddress], "newAgent: the agent alredy exists");
         agents[_agentAddress] = true;
         agentFeeByAgentAddress[_agentAddress] = _fee;
-        emit NewAgent(_agentAddress, fee);
+        emit NewAgent(_agentAddress, _fee);
     }
 
     function removeAgent(address _agentAddress) external onlyOwner {
@@ -124,7 +124,11 @@ contract Stablescrow is Ownable {
 
     /// External functions
 
-    function balanceRawOf(bytes32 _id) external view returns(uint256 balanceRaw) {
+    function balanceRawOf(bytes32 _id)
+        external
+        view
+        returns (uint256 balanceRaw)
+    {
         Escrow storage escrow = escrows[_id];
         uint256 balance = escrow.balance;
         uint256 agentAmount = _feeAmount(balance, escrow.fee);
@@ -150,14 +154,24 @@ contract Stablescrow is Ownable {
 
     /**
         @notice relase an amount from an escrow and send the tokens to the buyer address
-        @dev the sender should be the seller of the escrow
+        @dev the sender should be the buyer with the seller signature
     */
-    function release(bytes32 _id, uint256 _amount) external {
+    function releaseWithSellerSignature(
+        bytes32 _id,
+        uint256 _amount,
+        bytes calldata _sellerSignature
+    ) external {
         Escrow storage escrow = escrows[_id];
         require(
-            msg.sender == escrow.seller,
-            "release: the sender should be the seller"
+            msg.sender == escrow.buyer &&
+                escrow.seller ==
+                ECDSA.recover(
+                    ECDSA.toEthSignedMessageHash(_id),
+                    _sellerSignature
+                ),
+            "releaseWithSellerSignature: invalid sender or invalid seller signature"
         );
+
         (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
             _id,
             escrow.buyer,
@@ -166,6 +180,10 @@ contract Stablescrow is Ownable {
         emit Release(_id, escrow.seller, escrow.buyer, toAmount, agentFee);
     }
 
+    /**
+        @notice relase an amount from an escrow and send the tokens to the buyer address
+        @dev the sender should be the buyer with the agent signature
+    */
     function releaseWithAgentSignature(
         bytes32 _id,
         uint256 _amount,
@@ -301,7 +319,10 @@ contract Stablescrow is Ownable {
             "deposit: The sender should be the seller"
         );
 
-        uint256 plataformAmount = _feeAmount(_amount, escrows[_id].plataformFee);
+        uint256 plataformAmount = _feeAmount(
+            _amount,
+            escrows[_id].plataformFee
+        );
 
         /// Transfer the tokens
         IERC20 token = IERC20(escrow.token);
@@ -319,7 +340,7 @@ contract Stablescrow is Ownable {
         uint256 toEscrow = _amount.sub(plataformAmount);
         escrow.balance = escrow.balance.add(toEscrow);
 
-        emit Deposit(_id ,toEscrow, plataformAmount);
+        emit Deposit(_id, toEscrow, plataformAmount);
     }
 
     function _createEscrow(
@@ -348,7 +369,7 @@ contract Stablescrow is Ownable {
             seller: _seller,
             buyer: _buyer,
             fee: uint32(agentFee),
-            plataformFee: uint32(fee),
+            plataformFee: uint32(plataformFee),
             token: _token,
             balance: 0
         });
@@ -359,7 +380,7 @@ contract Stablescrow is Ownable {
             _seller,
             _buyer,
             agentFee,
-            fee,
+            plataformFee,
             _token,
             _salt
         );
@@ -438,5 +459,4 @@ contract Stablescrow is Ownable {
     {
         return _amount.mul(_fee).div(BASE);
     }
-
 }

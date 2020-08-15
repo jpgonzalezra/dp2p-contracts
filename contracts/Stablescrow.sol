@@ -20,7 +20,7 @@ contract Stablescrow is Ownable {
         address _token,
         uint256 _salt
     );
-    event Deposit(bytes32 _id, uint256 _toEscrow, uint256 _toPlatform);
+    event Deposit(bytes32 _id, uint256 _balanceRaw, uint256 _toEscrow, uint256 _toPlatform);
     event Release(
         bytes32 _id,
         address _sender,
@@ -312,7 +312,8 @@ contract Stablescrow is Ownable {
         uint256 toEscrow = _amount.sub(platformFee);
         escrow.balance = escrow.balance.add(toEscrow);
 
-        emit Deposit(_id, toEscrow, platformFee);
+        uint256 balanceRaw = toEscrow.sub(_feeAmount(toEscrow, escrow.fee));
+        emit Deposit(_id, balanceRaw ,toEscrow, platformFee);
     }
 
     function _createEscrow(

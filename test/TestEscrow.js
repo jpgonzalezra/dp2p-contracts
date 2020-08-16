@@ -9,7 +9,6 @@ const {
   address0x,
   maxUint,
   random32,
-  random32bn,
   fixSignature,
 } = require("./helper/index.js");
 

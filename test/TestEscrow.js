@@ -497,7 +497,7 @@ contract("Stablescrow", (accounts) => {
       );
     });
   });
-  describe.only("balanceRawOf", () => {
+  describe("balanceRawOf", () => {
     it("get balance raw (without fees)", async () => {
       const amount = WEI;
       const internalSalt = Math.floor(Math.random() * 1000000);

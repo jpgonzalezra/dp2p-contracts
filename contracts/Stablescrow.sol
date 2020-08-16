@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.6.2;
+pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/cryptography/ECDSA.sol";
@@ -324,19 +324,18 @@ contract Stablescrow is Ownable {
             escrows[_id].plataformFee
         );
 
-        /// Transfer the tokens
+        // Transfer the tokens
         IERC20 token = IERC20(escrow.token);
         require(
             token.transferFrom(msg.sender, address(this), _amount),
             "deposit: Error deposit tokens"
         );
 
-        /// Assign the fee amount to platform
-        address tokenAddress = escrow.token;
-        platformBalanceByToken[tokenAddress] = platformBalanceByToken[tokenAddress]
+        // Assign the fee amount to platform
+        platformBalanceByToken[address(token)] = platformBalanceByToken[address(token)]
             .add(plataformAmount);
 
-        /// Assign the deposit amount to the escrow, subtracting the fee platform amount
+        // Assign the deposit amount to the escrow, subtracting the fee platform amount
         uint256 toEscrow = _amount.sub(plataformAmount);
         escrow.balance = escrow.balance.add(toEscrow);
 
@@ -353,7 +352,7 @@ contract Stablescrow is Ownable {
         require(_token != address(0), "createEscrow: address 0x is invalid");
         require(agents[_agent], "createEscrow: the agent is invalid");
 
-        /// Calculate the escrow id
+        // Calculate the escrow id
         uint256 agentFee = agentFeeByAgentAddress[_agent];
         id = _calculateId(_agent, _seller, _buyer, agentFee, _token, _salt);
 

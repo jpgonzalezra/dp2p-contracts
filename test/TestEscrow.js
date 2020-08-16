@@ -637,17 +637,62 @@ contract("Stablescrow", (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it.skip("release with invalid address, should be the seller", async () => {
+    it("try to release escrow from buyer with incorrect seller signature", async () => {
       const id = await createBasicEscrow();
 
-      await tryCatchRevert(
-        () => tokenEscrow.releaseWithSellerSignature(id, 0, { from: buyer }),
-        "release: the sender should be the seller"
-      );
+      const amount = WEI.div(bn(2));
+      await updateBalances(id);
 
+      const sellerSignature = fixSignature(
+        await web3.eth.sign("incorrect seller signatura", basicEscrow.seller)
+      );
       await tryCatchRevert(
-        () => tokenEscrow.releaseWithSellerSignature(id, 0, { from: creator }),
-        "release: the sender should be the seller"
+        () =>
+          tokenEscrow.releaseWithSellerSignature(id, amount, sellerSignature, {
+            from: buyer,
+          }),
+        "releaseWithSellerSignature: invalid sender or invalid seller signature"
+      );
+    });
+    it("revert release escrow, signature invalid (buyer sign)", async () => {
+      const id = await createBasicEscrow();
+
+      const amount = WEI.div(bn(2));
+      await updateBalances(id);
+
+      const buyerSignature = fixSignature(
+        await web3.eth.sign(id, basicEscrow.buyer)
+      );
+      await tryCatchRevert(
+        () =>
+          tokenEscrow.releaseWithSellerSignature(id, amount, buyerSignature, {
+            from: buyer,
+          }),
+        "releaseWithSellerSignature: invalid sender or invalid seller signature"
+      );
+    });
+    it("revert release escrow, the signature was correct but the sender was not buyer", async () => {
+      const id = await createBasicEscrow();
+
+      const amount = WEI.div(bn(2));
+      await updateBalances(id);
+
+      const sellerSignature = fixSignature(
+        await web3.eth.sign(id, basicEscrow.seller)
+      );
+      await tryCatchRevert(
+        () =>
+          tokenEscrow.releaseWithSellerSignature(id, amount, sellerSignature, {
+            from: agent,
+          }),
+        "releaseWithSellerSignature: invalid sender or invalid seller signature"
+      );
+      await tryCatchRevert(
+        () =>
+          tokenEscrow.releaseWithSellerSignature(id, amount, sellerSignature, {
+            from: seller,
+          }),
+        "releaseWithSellerSignature: invalid sender or invalid seller signature"
       );
     });
   });
@@ -746,6 +791,13 @@ contract("Stablescrow", (accounts) => {
         () =>
           tokenEscrow.releaseWithAgentSignature(id, amount, agentSignature, {
             from: agent,
+          }),
+        "releaseWithAgentSignature: invalid sender or invalid agent signature"
+      );
+      await tryCatchRevert(
+        () =>
+          tokenEscrow.releaseWithAgentSignature(id, amount, agentSignature, {
+            from: seller,
           }),
         "releaseWithAgentSignature: invalid sender or invalid agent signature"
       );

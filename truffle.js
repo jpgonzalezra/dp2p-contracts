@@ -1,30 +1,38 @@
 const HDWalletProvider = require("truffle-hdwallet-provider");
+require("dotenv").config();
 
 module.exports = {
   networks: {
     development: {
-      host: 'localhost',
+      host: "localhost",
       port: 7545,
-      network_id: '*', // eslint-disable-line camelcase
+      network_id: "*", // eslint-disable-line camelcase
     },
     ropsten: {
-      provider: function() {
-        return new HDWalletProvider("0x36797df5163dda5138253414fc3918ab3a352165261de2fea109a68ee84b4110", "https://ropsten.infura.io/v3/f039330d8fb747e48a7ce98f51400d65")
+      provider: function () {
+        return new HDWalletProvider(
+          `${process.env.PRIVATE_KEY}`,
+          `https://ropsten.infura.io/v3/${process.env.INFURA_API_KEY}`
+        );
       },
       gasPrice: 90000000000,
-      network_id: 3
-    }
+      network_id: 3,
+    },
+  },
+  plugins: ["truffle-plugin-verify"],
+  api_keys: {
+    etherscan: process.env.ETHERSCAN_API_KEY,
   },
   compilers: {
     solc: {
-      version: '0.6.12',
+      version: "0.6.12",
       docker: false,
       settings: {
         optimizer: {
           enabled: true,
           runs: 200,
         },
-        evmVersion: 'petersburg',
+        evmVersion: "petersburg",
       },
     },
   },

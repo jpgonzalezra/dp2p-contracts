@@ -11,7 +11,8 @@
     "lint:sol": "solium -d .",
     "lint:sol:fix": "solium -d . --fix",
     "lint": "npm run lint:js && npm run lint:sol",
-    "lint:fix": "npm run lint:js:fix && npm run lint:sol:fix"
+    "lint:fix": "npm run lint:js:fix && npm run lint:sol:fix",
+    "build-contracts": "sol-merger \"./contracts/*.sol\" ./build"
   },
   "repository": {
     "type": "git",
@@ -40,6 +41,7 @@
     "eslint-plugin-promise": "3.8.0",
     "eslint-plugin-standard": "3.1.0",
     "ganache-cli": "6.4.3",
+    "sol-merger": "^3.1.0",
     "solium": "1.2.4",
     "truffle": "5.0.12",
     "truffle-hdwallet-provider": "1.0.17",

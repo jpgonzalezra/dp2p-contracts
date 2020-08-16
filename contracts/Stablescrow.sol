@@ -164,11 +164,7 @@ contract Stablescrow is Ownable {
         Escrow storage escrow = escrows[_id];
         require(
             msg.sender == escrow.buyer &&
-                escrow.seller ==
-                ECDSA.recover(
-                    ECDSA.toEthSignedMessageHash(_id),
-                    _sellerSignature
-                ),
+                isValidSignature(escrow.seller, _id, _sellerSignature),
             "releaseWithSellerSignature: invalid sender or invalid seller signature"
         );
 
@@ -192,11 +188,7 @@ contract Stablescrow is Ownable {
         Escrow storage escrow = escrows[_id];
         require(
             msg.sender == escrow.buyer &&
-                escrow.agent ==
-                ECDSA.recover(
-                    ECDSA.toEthSignedMessageHash(_id),
-                    _agentSignature
-                ),
+                isValidSignature(escrow.agent, _id, _agentSignature),
             "releaseWithAgentSignature: invalid sender or invalid agent signature"
         );
 
@@ -290,6 +282,16 @@ contract Stablescrow is Ownable {
 
     /// Internal functions
 
+    function isValidSignature(
+        address _signer,
+        bytes32 _data,
+        bytes memory _signature
+    ) internal view returns (bool) {
+        return
+            _signer ==
+            ECDSA.recover(ECDSA.toEthSignedMessageHash(_data), _signature);
+    }
+
     function _calculateId(
         address _agent,
         address _seller,
@@ -332,7 +334,9 @@ contract Stablescrow is Ownable {
         );
 
         // Assign the fee amount to platform
-        platformBalanceByToken[address(token)] = platformBalanceByToken[address(token)]
+        platformBalanceByToken[address(token)] = platformBalanceByToken[address(
+            token
+        )]
             .add(plataformAmount);
 
         // Assign the deposit amount to the escrow, subtracting the fee platform amount

@@ -68,6 +68,7 @@ contract Stablescrow is Ownable {
 
     mapping(address => uint256) public platformBalanceByToken;
     mapping(address => uint256) public agentFeeByAgentAddress;
+    mapping(bytes32 => uint256) public initialAmountById;
     mapping(bytes32 => Escrow) public escrows;
     mapping(address => bool) public agents;
 
@@ -129,10 +130,12 @@ contract Stablescrow is Ownable {
         view
         returns (uint256 balanceRaw)
     {
-        Escrow storage escrow = escrows[_id];
-        uint256 balance = escrow.balance;
-        uint256 agentAmount = _feeAmount(balance, escrow.fee);
-        balanceRaw = balance.sub(agentAmount);
+        Escrow memory escrow = escrows[_id];
+        uint256 amount = initialAmountById[_id];
+        uint256 agentAmount = _feeAmount(amount, escrow.fee);
+        uint256 plataformAmount = _feeAmount(amount, escrow.plataformFee);
+        balanceRaw = amount.sub(agentAmount);
+        balanceRaw = balanceRaw.sub(plataformAmount);
     }
 
     /**
@@ -150,6 +153,7 @@ contract Stablescrow is Ownable {
     ) external returns (bytes32 id) {
         id = _createEscrow(_agent, msg.sender, _buyer, _token, _salt);
         _deposit(id, _amount);
+        initialAmountById[id] = _amount;
     }
 
     /**

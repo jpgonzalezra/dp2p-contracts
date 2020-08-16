@@ -497,7 +497,7 @@ contract("Stablescrow", (accounts) => {
       );
     });
   });
-  describe.skip("balanceRawOf", () => {
+  describe.only("balanceRawOf", () => {
     it("get balance raw (without fees)", async () => {
       const amount = WEI;
       const internalSalt = Math.floor(Math.random() * 1000000);
@@ -529,7 +529,6 @@ contract("Stablescrow", (accounts) => {
 
       const fee = await tokenEscrow.plataformFee();
       const toPlatform = amount.mul(fee).div(BASE);
-      const balanceRaw = await tokenEscrow.balanceRawOf(id);
       const escrow = await tokenEscrow.escrows(id);
       const agentFeeAmount = amount.mul(escrow.fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
@@ -538,7 +537,7 @@ contract("Stablescrow", (accounts) => {
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
       expect(Deposit._toPlatform).to.eq.BN(toPlatform);
       expect(amount).to.eq.BN(Deposit._toEscrow.add(toPlatform));
-      expect(balanceRaw).to.eq.BN(toEscrow.sub(agentFeeAmount));
+      expect(await tokenEscrow.balanceRawOf(id)).to.eq.BN(toEscrow.sub(agentFeeAmount));
     });
   });
   describe("releaseWithSellerSignature", () => {

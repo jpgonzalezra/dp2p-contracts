@@ -511,7 +511,6 @@ contract("Stablescrow", (accounts) => {
         internalSalt
       );
       await updateBalances(id);
-      await tokenEscrow.newAgent(agent2, 500, { from: owner });
 
       const Deposit = await toEvents(
         tokenEscrow.createAndDepositEscrow(

@@ -127,7 +127,7 @@ contract Stablescrow is Ownable {
 
     function balanceRawOf(bytes32 _id)
         external
-        pure
+        view
         returns (uint256 balanceRaw)
     {
         Escrow memory escrow = escrows[_id];
@@ -165,7 +165,7 @@ contract Stablescrow is Ownable {
         uint256 _amount,
         bytes calldata _sellerSignature
     ) external {
-        Escrow storage escrow = escrows[_id];
+        Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.buyer &&
                 isValidSignature(escrow.seller, _id, _sellerSignature),
@@ -189,7 +189,7 @@ contract Stablescrow is Ownable {
         uint256 _amount,
         bytes calldata _agentSignature
     ) external {
-        Escrow storage escrow = escrows[_id];
+        Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.buyer &&
                 isValidSignature(escrow.agent, _id, _agentSignature),
@@ -215,7 +215,7 @@ contract Stablescrow is Ownable {
         @dev The sender should be the agent of the escrow
     */
     function resolveDispute(bytes32 _id, uint256 _amount) external {
-        Escrow storage escrow = escrows[_id];
+        Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.agent || msg.sender == _owner,
             "resolveDispute: the sender should be the agent or owner"
@@ -241,7 +241,7 @@ contract Stablescrow is Ownable {
         @param _id escrow id
     */
     function buyerCancel(bytes32 _id) external {
-        Escrow storage escrow = escrows[_id];
+        Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.buyer,
             "buyerCancel: the sender should be the buyer"
@@ -261,7 +261,7 @@ contract Stablescrow is Ownable {
         @param _id escrow id
     */
     function cancel(bytes32 _id) external {
-        Escrow storage escrow = escrows[_id];
+        Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.agent || msg.sender == _owner,
             "cancel: the sender should be the agent or platform"
@@ -290,7 +290,7 @@ contract Stablescrow is Ownable {
         address _signer,
         bytes32 _data,
         bytes memory _signature
-    ) internal view returns (bool) {
+    ) internal pure returns (bool) {
         return
             _signer ==
             ECDSA.recover(ECDSA.toEthSignedMessageHash(_data), _signature);

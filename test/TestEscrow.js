@@ -124,28 +124,28 @@ contract("Stablescrow", (accounts) => {
       );
 
       expect(setFeeEvent._fee).to.eq.BN(fee);
-      expect(await tokenEscrow.plataformFee()).to.eq.BN(fee);
+      expect(await tokenEscrow.platformFee()).to.eq.BN(fee);
     });
     it("set max platform fee allowed", async () => {
-      const maxFeeAllowed = await tokenEscrow.MAX_FEE();
+      const maxFeeAllowed = await tokenEscrow.MAX_PLATFORM_FEE();
       const setFeeEvent = await toEvents(
         tokenEscrow.setPlatformFee(maxFeeAllowed, { from: owner }),
         "SetFee"
       );
 
       expect(setFeeEvent._fee).to.eq.BN(maxFeeAllowed);
-      expect(await tokenEscrow.plataformFee()).to.eq.BN(maxFeeAllowed);
+      expect(await tokenEscrow.platformFee()).to.eq.BN(maxFeeAllowed);
     });
-    it("should be fail, set fee > MAX_FEE", async function () {
-      const maxFeeAllowed = await tokenEscrow.MAX_FEE();
+    it("should be fail, set fee > MAX_PLATFORM_FEE", async function () {
+      const maxFeeAllowed = await tokenEscrow.MAX_PLATFORM_FEE();
       const wrongFee = maxFeeAllowed + 1;
       await tryCatchRevert(
         () => tokenEscrow.setPlatformFee(wrongFee, { from: owner }),
-        "setPlatformFee: The platform fee should be lower than the MAX_FEE"
+        "setPlatformFee: The platform fee should be lower than the MAX_PLATFORM_FEE"
       );
       await tryCatchRevert(
         () => tokenEscrow.setPlatformFee(maxUint(256), { from: owner }),
-        "setPlatformFee: The platform fee should be lower than the MAX_FEE"
+        "setPlatformFee: The platform fee should be lower than the MAX_PLATFORM_FEE"
       );
     });
   });
@@ -169,7 +169,7 @@ contract("Stablescrow", (accounts) => {
   describe("platformWithdraw", function () {
     it("platform balance withdraw", async () => {
       const id = await createBasicEscrow();
-      const fee = await tokenEscrow.plataformFee();
+      const fee = await tokenEscrow.platformFee();
       const platatormFee = WEI.mul(fee).div(BASE);
       await updateBalances(id);
 
@@ -277,7 +277,7 @@ contract("Stablescrow", (accounts) => {
       );
 
       expect(Deposit._id, id);
-      const fee = await tokenEscrow.plataformFee();
+      const fee = await tokenEscrow.platformFee();
       const toPlatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
@@ -352,7 +352,7 @@ contract("Stablescrow", (accounts) => {
       );
 
       expect(Deposit._id, id);
-      const fee = await tokenEscrow.plataformFee();
+      const fee = await tokenEscrow.platformFee();
       const toPlatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
@@ -411,7 +411,7 @@ contract("Stablescrow", (accounts) => {
       );
 
       expect(Deposit._id, id);
-      const fee = await tokenEscrow.plataformFee();
+      const fee = await tokenEscrow.platformFee();
       const toPlatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
@@ -467,7 +467,7 @@ contract("Stablescrow", (accounts) => {
         "Deposit"
       );
       expect(Deposit._id, id);
-      const fee = await tokenEscrow.plataformFee();
+      const fee = await tokenEscrow.platformFee();
       const toPlatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
@@ -526,7 +526,7 @@ contract("Stablescrow", (accounts) => {
         "Deposit"
       );
 
-      const fee = await tokenEscrow.plataformFee();
+      const fee = await tokenEscrow.platformFee();
       const toPlatform = amount.mul(fee).div(BASE);
       const escrow = await tokenEscrow.escrows(id);
       const agentFeeAmount = amount.mul(escrow.fee).div(BASE);
@@ -965,7 +965,7 @@ contract("Stablescrow", (accounts) => {
         prevBalTokenEscrow.sub(prevBalEscrow)
       );
     });
-    it("plataform cancel an escrow", async () => {
+    it("platform cancel an escrow", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
 

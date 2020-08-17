@@ -127,7 +127,7 @@ contract Stablescrow is Ownable {
 
     function balanceRawOf(bytes32 _id)
         external
-        view
+        pure
         returns (uint256 balanceRaw)
     {
         Escrow memory escrow = escrows[_id];

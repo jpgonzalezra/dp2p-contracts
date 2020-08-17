@@ -55,15 +55,15 @@ contract Stablescrow is Ownable {
         address agent;
         address seller;
         address buyer;
+        address token;
+        uint256 balance;
         uint32 fee;
         uint32 platformFee;
-        uint256 balance;
-        address token;
     }
 
-    uint256 public constant BASE = 10000;
-    uint256 public constant MAX_PLATFORM_FEE = 100;
-    uint256 public constant MAX_AGENT_FEE = 1000;
+    uint256 internal constant BASE = 10000;
+    uint256 internal constant MAX_PLATFORM_FEE = 100;
+    uint256 internal constant MAX_AGENT_FEE = 1000;
     uint32 public platformFee;
 
     mapping(address => uint256) public platformBalanceByToken;

@@ -14,8 +14,8 @@ const {
 
 contract("Stablescrow", (accounts) => {
   const WEI = bn(web3.utils.toWei("1"));
-  let BASE;
-
+  const MAX_PLATFORM_FEE = 100;
+  const BASE = bn(10000);
   const owner = accounts[1];
   const creator = accounts[2];
   const agent = accounts[5];
@@ -104,7 +104,6 @@ contract("Stablescrow", (accounts) => {
     await tokenEscrow.newAgent(agent, 500, { from: owner });
 
     await tokenEscrow.setPlatformFee(50, { from: owner });
-    BASE = await tokenEscrow.BASE();
 
     basicEscrow = {
       agent,
@@ -127,7 +126,7 @@ contract("Stablescrow", (accounts) => {
       expect(await tokenEscrow.platformFee()).to.eq.BN(fee);
     });
     it("set max platform fee allowed", async () => {
-      const maxFeeAllowed = await tokenEscrow.MAX_PLATFORM_FEE();
+      const maxFeeAllowed = MAX_PLATFORM_FEE;
       const setFeeEvent = await toEvents(
         tokenEscrow.setPlatformFee(maxFeeAllowed, { from: owner }),
         "SetFee"
@@ -137,7 +136,7 @@ contract("Stablescrow", (accounts) => {
       expect(await tokenEscrow.platformFee()).to.eq.BN(maxFeeAllowed);
     });
     it("should be fail, set fee > MAX_PLATFORM_FEE", async function () {
-      const maxFeeAllowed = await tokenEscrow.MAX_PLATFORM_FEE();
+      const maxFeeAllowed = MAX_PLATFORM_FEE;
       const wrongFee = maxFeeAllowed + 1;
       await tryCatchRevert(
         () => tokenEscrow.setPlatformFee(wrongFee, { from: owner }),
@@ -536,7 +535,9 @@ contract("Stablescrow", (accounts) => {
       expect(Deposit._toEscrow).to.eq.BN(toEscrow);
       expect(Deposit._toPlatform).to.eq.BN(toPlatform);
       expect(amount).to.eq.BN(Deposit._toEscrow.add(toPlatform));
-      expect(await tokenEscrow.balanceRawOf(id)).to.eq.BN(toEscrow.sub(agentFeeAmount));
+      expect(await tokenEscrow.balanceRawOf(id)).to.eq.BN(
+        toEscrow.sub(agentFeeAmount)
+      );
     });
   });
   describe("releaseWithSellerSignature", () => {

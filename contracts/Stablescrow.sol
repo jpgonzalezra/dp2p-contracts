@@ -56,8 +56,8 @@ contract Stablescrow is Ownable {
         address buyer;
         address token;
         uint256 balance;
-        uint32 fee;
-        uint32 platformFee;
+        uint256 fee;
+        uint256 platformFee;
     }
 
     uint256 internal constant BASE = 10000;
@@ -130,8 +130,8 @@ contract Stablescrow is Ownable {
     {
         Escrow memory escrow = escrows[_id];
         uint256 amount = initialAmountById[_id];
-        uint256 agentAmount = _feeAmount(amount, uint256(escrow.fee));
-        uint256 platformAmount = _feeAmount(amount, uint256(escrow.platformFee));
+        uint256 agentAmount = _feeAmount(amount, escrow.fee);
+        uint256 platformAmount = _feeAmount(amount, escrow.platformFee);
         balanceRaw = amount.sub(agentAmount);
         balanceRaw = balanceRaw.sub(platformAmount);
     }
@@ -187,7 +187,7 @@ contract Stablescrow is Ownable {
             fee: uint32(agentFee),
             platformFee: uint32(platformFee),
             token: _token,
-            balance: _amount.sub(platformAmount) // deposit amount into the escrow subtracting the fee platform amount
+            balance: _amount.sub(platformAmount)
         });
         
         emit CreateAndDeposit(
@@ -404,7 +404,7 @@ contract Stablescrow is Ownable {
 
         if (_withAgentFee) {
             /// calculate the fee
-            agentAmount = _feeAmount(_amount, uint256(escrow.fee));
+            agentAmount = _feeAmount(_amount, escrow.fee);
             /// substract the agent fee
             escrow.balance = escrow.balance.sub(agentAmount);
             toAmount = _amount.sub(agentAmount);

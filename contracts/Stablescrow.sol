@@ -184,8 +184,8 @@ contract Stablescrow is Ownable {
             agent: _agent,
             seller: seller,
             buyer: _buyer,
-            fee: uint32(agentFee),
-            platformFee: uint32(platformFee),
+            fee: agentFee,
+            platformFee: platformFee,
             token: _token,
             balance: _amount.sub(platformAmount)
         });
@@ -356,7 +356,7 @@ contract Stablescrow is Ownable {
                     _agent,
                     _seller,
                     _buyer,
-                    uint32(_agentFee),
+                    _agentFee,
                     _token,
                     _salt
                 )

@@ -10,17 +10,16 @@ contract Stablescrow is Ownable {
     using SafeMath for uint256;
 
     /// User Events
-    event CreateEscrow(
+
+    event CreateAndDeposit(
         bytes32 _id,
         address _agent,
         address _seller,
         address _buyer,
-        uint256 _fee,
         uint256 _platformFee,
-        address _token,
-        uint256 _salt
+        uint256 _amount,
+        address _token
     );
-    event Deposit(bytes32 _id, uint256 _toEscrow, uint256 _toPlatform);
     event Release(
         bytes32 _id,
         address _sender,
@@ -64,7 +63,7 @@ contract Stablescrow is Ownable {
     uint256 internal constant BASE = 10000;
     uint256 internal constant MAX_PLATFORM_FEE = 100;
     uint256 internal constant MAX_AGENT_FEE = 1000;
-    uint32 public platformFee;
+    uint256 public platformFee;
 
     mapping(address => uint256) public platformBalanceByToken;
     mapping(address => uint256) public agentFeeByAgentAddress;
@@ -124,7 +123,6 @@ contract Stablescrow is Ownable {
     }
 
     /// External functions
-
     function balanceRawOf(bytes32 _id)
         external
         view
@@ -132,8 +130,8 @@ contract Stablescrow is Ownable {
     {
         Escrow memory escrow = escrows[_id];
         uint256 amount = initialAmountById[_id];
-        uint256 agentAmount = _feeAmount(amount, escrow.fee);
-        uint256 platformAmount = _feeAmount(amount, escrow.platformFee);
+        uint256 agentAmount = _feeAmount(amount, uint256(escrow.fee));
+        uint256 platformAmount = _feeAmount(amount, uint256(escrow.platformFee));
         balanceRaw = amount.sub(agentAmount);
         balanceRaw = balanceRaw.sub(platformAmount);
     }
@@ -144,16 +142,63 @@ contract Stablescrow is Ownable {
              the seller of the escrow should be the sender
         @return id of the escrow
     */
-    function createAndDepositEscrow(
+
+    function createAndDeposit(
         uint256 _amount,
         address _agent,
         address _buyer,
         address _token,
         uint256 _salt
     ) external returns (bytes32 id) {
-        id = _createEscrow(_agent, msg.sender, _buyer, _token, _salt);
-        _deposit(id, _amount);
+        require(
+            _token != address(0),
+            "createAndDeposit: address 0x is invalid"
+        );
+        require(agents[_agent], "createAndDeposit: the agent is invalid");
+        address seller = msg.sender;
+        // Calculate the escrow id
+        uint256 agentFee = agentFeeByAgentAddress[_agent];
+
+        id = _calculateId(_agent, seller, _buyer, agentFee, _token, _salt);
+        /// Check if the escrow was created
+        require(
+            escrows[id].agent == address(0),
+            "createAndDeposit: the escrow exists"
+        );
+
+        // Transfer the tokens from the sender
+        IERC20 token = IERC20(_token);
+        require(
+            token.transferFrom(msg.sender, address(this), _amount),
+            "createAndDeposit: error deposit tokens"
+        );
+
+        // Assign the fee amount to platform
+        uint256 platformAmount = _feeAmount(_amount, platformFee);
+        platformBalanceByToken[_token] = platformBalanceByToken[_token].add(
+            platformAmount
+        );
+
         initialAmountById[id] = _amount;
+        escrows[id] = Escrow({
+            agent: _agent,
+            seller: seller,
+            buyer: _buyer,
+            fee: uint32(agentFee),
+            platformFee: uint32(platformFee),
+            token: _token,
+            balance: _amount.sub(platformAmount) // deposit amount into the escrow subtracting the fee platform amount
+        });
+        
+        emit CreateAndDeposit(
+            id,
+            _agent,
+            seller,
+            _buyer,
+            platformFee,
+            _amount,
+            _token
+        );
     }
 
     /**
@@ -318,81 +363,6 @@ contract Stablescrow is Ownable {
             );
     }
 
-    function _deposit(bytes32 _id, uint256 _amount) internal {
-        Escrow storage escrow = escrows[_id];
-        require(
-            msg.sender == escrow.seller,
-            "deposit: The sender should be the seller"
-        );
-
-        uint256 platformAmount = _feeAmount(
-            _amount,
-            escrows[_id].platformFee
-        );
-
-        // Transfer the tokens
-        IERC20 token = IERC20(escrow.token);
-        require(
-            token.transferFrom(msg.sender, address(this), _amount),
-            "deposit: Error deposit tokens"
-        );
-
-        // Assign the fee amount to platform
-        platformBalanceByToken[address(token)] = platformBalanceByToken[address(
-            token
-        )]
-            .add(platformAmount);
-
-        // Assign the deposit amount to the escrow, subtracting the fee platform amount
-        uint256 toEscrow = _amount.sub(platformAmount);
-        escrow.balance = escrow.balance.add(toEscrow);
-
-        emit Deposit(_id, toEscrow, platformAmount);
-    }
-
-    function _createEscrow(
-        address _agent,
-        address _seller,
-        address _buyer,
-        address _token,
-        uint256 _salt
-    ) internal returns (bytes32 id) {
-        require(_token != address(0), "createEscrow: address 0x is invalid");
-        require(agents[_agent], "createEscrow: the agent is invalid");
-
-        // Calculate the escrow id
-        uint256 agentFee = agentFeeByAgentAddress[_agent];
-        id = _calculateId(_agent, _seller, _buyer, agentFee, _token, _salt);
-
-        /// Check if the escrow was created
-        require(
-            escrows[id].agent == address(0),
-            "createEscrow: The escrow exists"
-        );
-
-        /// Add escrow
-        escrows[id] = Escrow({
-            agent: _agent,
-            seller: _seller,
-            buyer: _buyer,
-            fee: uint32(agentFee),
-            platformFee: uint32(platformFee),
-            token: _token,
-            balance: 0
-        });
-
-        emit CreateEscrow(
-            id,
-            _agent,
-            _seller,
-            _buyer,
-            agentFee,
-            platformFee,
-            _token,
-            _salt
-        );
-    }
-
     function _withdrawWithFee(
         bytes32 _id,
         address _to,
@@ -434,7 +404,7 @@ contract Stablescrow is Ownable {
 
         if (_withAgentFee) {
             /// calculate the fee
-            agentAmount = _feeAmount(_amount, escrow.fee);
+            agentAmount = _feeAmount(_amount, uint256(escrow.fee));
             /// substract the agent fee
             escrow.balance = escrow.balance.sub(agentAmount);
             toAmount = _amount.sub(agentAmount);

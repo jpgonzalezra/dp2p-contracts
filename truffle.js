@@ -1,12 +1,12 @@
-const HDWalletProvider = require("truffle-hdwallet-provider");
-require("dotenv").config();
+const HDWalletProvider = require('truffle-hdwallet-provider');
+require('dotenv').config();
 
 module.exports = {
   networks: {
     development: {
-      host: "localhost",
+      host: 'localhost',
       port: 7545,
-      network_id: "*", // eslint-disable-line camelcase
+      network_id: '*', // eslint-disable-line camelcase
     },
     ropsten: {
       provider: function () {
@@ -16,23 +16,23 @@ module.exports = {
         );
       },
       gasPrice: 90000000000,
-      network_id: 3,
+      network_id: 3, // eslint-disable-line camelcase
     },
   },
-  plugins: ["truffle-plugin-verify"],
-  api_keys: {
+  plugins: ['truffle-plugin-verify'],
+  api_keys: { // eslint-disable-line camelcase
     etherscan: process.env.ETHERSCAN_API_KEY,
   },
   compilers: {
     solc: {
-      version: "0.6.12",
+      version: '0.6.12',
       docker: false,
       settings: {
         optimizer: {
           enabled: true,
           runs: 200,
         },
-        evmVersion: "petersburg",
+        evmVersion: 'petersburg',
       },
     },
   },

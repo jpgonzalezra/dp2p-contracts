@@ -8,7 +8,10 @@ contract Ownable is IERC173 {
     address internal _owner;
 
     modifier onlyOwner() {
-        require(msg.sender == _owner, "Owneable: The owner should be the sender");
+        require(
+            msg.sender == _owner,
+            "Owneable: The owner should be the sender"
+        );
         _;
     }
 

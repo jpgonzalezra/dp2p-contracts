@@ -72,8 +72,8 @@ contract("Stablescrow", (accounts) => {
   const createBasicEscrow = async (amount = WEI) => {
     basicEscrow.salt = ++salt;
     await approve(seller, amount);
-    const Deposit = await toEvents(
-      tokenEscrow.createAndDepositEscrow(
+    const CreateAndDeposit = await toEvents(
+      tokenEscrow.createAndDeposit(
         amount,
         basicEscrow.agent,
         basicEscrow.buyer,
@@ -83,7 +83,7 @@ contract("Stablescrow", (accounts) => {
           from: seller,
         }
       ),
-      "Deposit"
+      "CreateAndDeposit"
     );
     const fee = await tokenEscrow.agentFeeByAgentAddress(basicEscrow.agent);
     const id = await calcId(
@@ -94,7 +94,7 @@ contract("Stablescrow", (accounts) => {
       basicEscrow.token,
       basicEscrow.salt
     );
-    expect(Deposit._id, id);
+    expect(CreateAndDeposit._id, id);
     return id;
   };
 
@@ -245,7 +245,7 @@ contract("Stablescrow", (accounts) => {
       );
     });
   });
-  describe("createAndDepositEscrow", () => {
+  describe("createAndDeposit", () => {
     it("create escrow and deposit", async () => {
       const amount = WEI;
       const internalSalt = 999;
@@ -261,8 +261,8 @@ contract("Stablescrow", (accounts) => {
       await updateBalances(id);
       await tokenEscrow.newAgent(agent2, 500, { from: owner });
 
-      const Deposit = await toEvents(
-        tokenEscrow.createAndDepositEscrow(
+      const CreateAndDeposit = await toEvents(
+        tokenEscrow.createAndDeposit(
           amount,
           agent2,
           buyer,
@@ -272,17 +272,17 @@ contract("Stablescrow", (accounts) => {
             from: seller,
           }
         ),
-        "Deposit"
+        "CreateAndDeposit"
       );
 
-      expect(Deposit._id, id);
+      expect(CreateAndDeposit._id, id);
       const fee = await tokenEscrow.platformFee();
       const toPlatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
-      expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toPlatform).to.eq.BN(toPlatform);
+      expect(CreateAndDeposit._amount).to.eq.BN(amount);
 
       const escrow = await tokenEscrow.escrows(id);
+      expect(escrow.balance, toEscrow);
       expect(escrow.agent, agent2);
       expect(escrow.seller, seller);
       expect(escrow.buyer, buyer);
@@ -308,7 +308,7 @@ contract("Stablescrow", (accounts) => {
       const amount = WEI;
       await tryCatchRevert(
         () =>
-          tokenEscrow.createAndDepositEscrow(
+          tokenEscrow.createAndDeposit(
             amount,
             agent2,
             buyer,
@@ -318,7 +318,7 @@ contract("Stablescrow", (accounts) => {
               from: seller,
             }
           ),
-        "createEscrow: The escrow exists"
+        "createAndDeposit: the escrow exists"
       );
     });
     it("create escrow and deposit tokens", async () => {
@@ -336,8 +336,8 @@ contract("Stablescrow", (accounts) => {
       );
       await updateBalances(id);
 
-      const Deposit = await toEvents(
-        tokenEscrow.createAndDepositEscrow(
+      const CreateAndDeposit = await toEvents(
+        tokenEscrow.createAndDeposit(
           amount,
           agent,
           buyer,
@@ -347,17 +347,17 @@ contract("Stablescrow", (accounts) => {
             from: seller,
           }
         ),
-        "Deposit"
+        "CreateAndDeposit"
       );
 
-      expect(Deposit._id, id);
+      expect(CreateAndDeposit._id, id);
       const fee = await tokenEscrow.platformFee();
       const toPlatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
-      expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toPlatform).to.eq.BN(toPlatform);
 
       const escrow = await tokenEscrow.escrows(id);
+
+      expect(escrow.balance).to.eq.BN(prevBalEscrow.add(toEscrow));
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
       expect(escrow.buyer, buyer);
@@ -375,7 +375,7 @@ contract("Stablescrow", (accounts) => {
       );
       expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
 
-      expect(escrow.balance).to.eq.BN(prevBalEscrow.add(toEscrow));
+      expect(escrow.balance).to.eq.BN(toEscrow);
       expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
         prevBalTokenEscrow.add(amount)
       );
@@ -395,8 +395,8 @@ contract("Stablescrow", (accounts) => {
       );
       await updateBalances(id);
 
-      const Deposit = await toEvents(
-        tokenEscrow.createAndDepositEscrow(
+      const CreateAndDeposit = await toEvents(
+        tokenEscrow.createAndDeposit(
           amount,
           agent,
           buyer,
@@ -406,17 +406,17 @@ contract("Stablescrow", (accounts) => {
             from: seller,
           }
         ),
-        "Deposit"
+        "CreateAndDeposit"
       );
 
-      expect(Deposit._id, id);
+      expect(CreateAndDeposit._id, id);
       const fee = await tokenEscrow.platformFee();
       const toPlatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
-      expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toPlatform).to.eq.BN(toPlatform);
+      expect(CreateAndDeposit._toPlatform).to.eq.BN(toPlatform);
 
       const escrow = await tokenEscrow.escrows(id);
+      expect(escrow.balance).to.eq.BN(toEscrow);
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
       expect(escrow.buyer, buyer);
@@ -452,8 +452,8 @@ contract("Stablescrow", (accounts) => {
       );
       await updateBalances(id);
 
-      const Deposit = await toEvents(
-        tokenEscrow.createAndDepositEscrow(
+      const CreateAndDeposit = await toEvents(
+        tokenEscrow.createAndDeposit(
           amount,
           agent,
           buyer,
@@ -463,16 +463,15 @@ contract("Stablescrow", (accounts) => {
             from: seller,
           }
         ),
-        "Deposit"
+        "CreateAndDeposit"
       );
-      expect(Deposit._id, id);
+      expect(CreateAndDeposit._id, id);
       const fee = await tokenEscrow.platformFee();
       const toPlatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
-      expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toPlatform).to.eq.BN(toPlatform);
 
       const escrow = await tokenEscrow.escrows(id);
+      expect(escrow.balance).to.eq.BN(toEscrow);
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
       expect(escrow.buyer, buyer);
@@ -511,8 +510,8 @@ contract("Stablescrow", (accounts) => {
       );
       await updateBalances(id);
 
-      const Deposit = await toEvents(
-        tokenEscrow.createAndDepositEscrow(
+      const CreateAndDeposit = await toEvents(
+        tokenEscrow.createAndDeposit(
           amount,
           agent2,
           buyer,
@@ -522,7 +521,7 @@ contract("Stablescrow", (accounts) => {
             from: seller,
           }
         ),
-        "Deposit"
+        "CreateAndDeposit"
       );
 
       const fee = await tokenEscrow.platformFee();
@@ -531,10 +530,9 @@ contract("Stablescrow", (accounts) => {
       const agentFeeAmount = amount.mul(escrow.fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
 
-      expect(Deposit._id, id);
-      expect(Deposit._toEscrow).to.eq.BN(toEscrow);
-      expect(Deposit._toPlatform).to.eq.BN(toPlatform);
-      expect(amount).to.eq.BN(Deposit._toEscrow.add(toPlatform));
+      expect(CreateAndDeposit._id, id);
+      expect(escrow.balance, toEscrow);
+      expect(amount).to.eq.BN(escrow.balance.add(toPlatform));
       expect(await tokenEscrow.balanceRawOf(id)).to.eq.BN(
         toEscrow.sub(agentFeeAmount)
       );

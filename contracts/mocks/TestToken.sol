@@ -3,6 +3,7 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
+
 // mock class using ERC20
 contract TestToken is ERC20 {
     constructor() public payable ERC20("Test1", "TEST1") {}

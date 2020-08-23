@@ -20,7 +20,7 @@ contract Stablescrow is Ownable {
         uint256 _platformAmount,
         address _token
     );
-    event Release(
+    event ReleaseWithSellerSignature(
         bytes32 _id,
         address _sender,
         address _to,
@@ -56,7 +56,7 @@ contract Stablescrow is Ownable {
         address buyer;
         address token;
         uint256 balance;
-        uint256 fee;
+        uint256 agentFee;
     }
 
     uint256 internal constant BASE = 10000;
@@ -168,7 +168,7 @@ contract Stablescrow is Ownable {
             agent: _agent,
             seller: seller,
             buyer: _buyer,
-            fee: agentFee,
+            agentFee: agentFee,
             token: _token,
             balance: balance
         });
@@ -190,7 +190,6 @@ contract Stablescrow is Ownable {
     */
     function releaseWithSellerSignature(
         bytes32 _id,
-        uint256 _amount,
         bytes calldata _sellerSignature
     ) external {
         Escrow memory escrow = escrows[_id];
@@ -203,9 +202,9 @@ contract Stablescrow is Ownable {
         (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
             _id,
             escrow.buyer,
-            _amount
+            escrow.balance
         );
-        emit Release(_id, escrow.seller, escrow.buyer, toAmount, agentFee);
+        emit ReleaseWithSellerSignature(_id, escrow.seller, escrow.buyer, toAmount, agentFee);
     }
 
     /**
@@ -214,7 +213,6 @@ contract Stablescrow is Ownable {
     */
     function releaseWithAgentSignature(
         bytes32 _id,
-        uint256 _amount,
         bytes calldata _agentSignature
     ) external {
         Escrow memory escrow = escrows[_id];
@@ -227,7 +225,7 @@ contract Stablescrow is Ownable {
         (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
             _id,
             escrow.buyer,
-            _amount
+            escrow.balance
         );
         emit ReleaseWithAgentSignature(
             _id,
@@ -242,7 +240,7 @@ contract Stablescrow is Ownable {
         @notice resolve dispute
         @dev The sender should be the agent of the escrow
     */
-    function resolveDispute(bytes32 _id, uint256 _amount) external {
+    function resolveDispute(bytes32 _id) external {
         Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.agent || msg.sender == _owner,
@@ -251,7 +249,7 @@ contract Stablescrow is Ownable {
         (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
             _id,
             escrow.buyer,
-            _amount
+            escrow.balance
         );
         emit DisputeResolved(
             _id,
@@ -387,7 +385,7 @@ contract Stablescrow is Ownable {
 
         if (_withAgentFee) {
             /// calculate the fee
-            agentAmount = _feeAmount(_amount, escrow.fee);
+            agentAmount = _feeAmount(_amount, escrow.agentFee);
             /// substract the agent fee
             escrow.balance = escrow.balance.sub(agentAmount);
             toAmount = _amount.sub(agentAmount);

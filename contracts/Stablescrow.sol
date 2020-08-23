@@ -16,8 +16,8 @@ contract Stablescrow is Ownable {
         address _agent,
         address _seller,
         address _buyer,
-        uint256 _platformFee,
-        uint256 _amount,
+        uint256 _balance,
+        uint256 _platformAmount,
         address _token
     );
     event Release(
@@ -57,7 +57,6 @@ contract Stablescrow is Ownable {
         address token;
         uint256 balance;
         uint256 fee;
-        uint256 platformFee;
     }
 
     uint256 internal constant BASE = 10000;
@@ -67,9 +66,8 @@ contract Stablescrow is Ownable {
 
     mapping(address => uint256) public platformBalanceByToken;
     mapping(address => uint256) public agentFeeByAgentAddress;
-    mapping(bytes32 => uint256) public initialAmountById;
-    mapping(bytes32 => Escrow) public escrows;
     mapping(address => bool) public agents;
+    mapping(bytes32 => Escrow) public escrows;
 
     function setPlatformFee(uint32 _platformFee) external onlyOwner {
         require(
@@ -122,20 +120,6 @@ contract Stablescrow is Ownable {
         emit RemoveAgent(_agentAddress);
     }
 
-    /// External functions
-    function balanceRawOf(bytes32 _id)
-        external
-        view
-        returns (uint256 balanceRaw)
-    {
-        Escrow memory escrow = escrows[_id];
-        uint256 amount = initialAmountById[_id];
-        uint256 agentAmount = _feeAmount(amount, escrow.fee);
-        uint256 platformAmount = _feeAmount(amount, escrow.platformFee);
-        balanceRaw = amount.sub(agentAmount);
-        balanceRaw = balanceRaw.sub(platformAmount);
-    }
-
     /**
         @notice deposit an amount in the escrow after creating this
         @dev create and deposit operation in one transaction,
@@ -179,15 +163,14 @@ contract Stablescrow is Ownable {
             platformAmount
         );
 
-        initialAmountById[id] = _amount;
+        uint256 balance = _amount.sub(platformAmount);
         escrows[id] = Escrow({
             agent: _agent,
             seller: seller,
             buyer: _buyer,
             fee: agentFee,
-            platformFee: platformFee,
             token: _token,
-            balance: _amount.sub(platformAmount)
+            balance: balance
         });
         
         emit CreateAndDeposit(
@@ -195,8 +178,8 @@ contract Stablescrow is Ownable {
             _agent,
             seller,
             _buyer,
-            platformFee,
-            _amount,
+            balance,
+            platformAmount,
             _token
         );
     }

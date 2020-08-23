@@ -64,7 +64,7 @@ contract("Stablescrow", (accounts) => {
       { t: "address", v: _agent },
       { t: "address", v: _seller },
       { t: "address", v: _buyer },
-      { t: "uint32", v: _fee },
+      { t: "uint256", v: _fee },
       { t: "address", v: _token },
       { t: "uint256", v: _salt }
     );
@@ -279,7 +279,7 @@ contract("Stablescrow", (accounts) => {
       const fee = await tokenEscrow.platformFee();
       const toPlatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
-      expect(CreateAndDeposit._amount).to.eq.BN(amount);
+      expect(CreateAndDeposit._balance.add(CreateAndDeposit._platformAmount)).to.eq.BN(amount);
 
       const escrow = await tokenEscrow.escrows(id);
       expect(escrow.balance, toEscrow);
@@ -492,49 +492,6 @@ contract("Stablescrow", (accounts) => {
       expect(escrow.balance).to.eq.BN(prevBalEscrow.add(toEscrow));
       expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
         prevBalTokenEscrow.add(amount)
-      );
-    });
-  });
-  describe("balanceRawOf", () => {
-    it("get balance raw (without fees)", async () => {
-      const amount = WEI;
-      const internalSalt = Math.floor(Math.random() * 1000000);
-      await approve(seller, amount);
-      const id = await calcId(
-        agent2,
-        seller,
-        buyer,
-        500,
-        erc20.address,
-        internalSalt
-      );
-      await updateBalances(id);
-
-      const CreateAndDeposit = await toEvents(
-        tokenEscrow.createAndDeposit(
-          amount,
-          agent2,
-          buyer,
-          erc20.address,
-          internalSalt,
-          {
-            from: seller,
-          }
-        ),
-        "CreateAndDeposit"
-      );
-
-      const fee = await tokenEscrow.platformFee();
-      const toPlatform = amount.mul(fee).div(BASE);
-      const escrow = await tokenEscrow.escrows(id);
-      const agentFeeAmount = amount.mul(escrow.fee).div(BASE);
-      const toEscrow = amount.sub(toPlatform);
-
-      expect(CreateAndDeposit._id, id);
-      expect(escrow.balance, toEscrow);
-      expect(amount).to.eq.BN(escrow.balance.add(toPlatform));
-      expect(await tokenEscrow.balanceRawOf(id)).to.eq.BN(
-        toEscrow.sub(agentFeeAmount)
       );
     });
   });

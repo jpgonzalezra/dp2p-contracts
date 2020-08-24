@@ -1,5 +1,5 @@
 const TestToken = artifacts.require("mocks/TestToken"); // 18 digits
-const TestToken2 = artifacts.require("mocks/TestToken2"); // 8 digits
+const TestToken2 = artifacts.require("mocks/TestToken2"); // 6 digits
 const Stablescrow = artifacts.require("Stablescrow");
 
 module.exports = function (deployer) {

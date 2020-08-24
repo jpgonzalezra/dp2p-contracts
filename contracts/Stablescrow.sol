@@ -172,7 +172,7 @@ contract Stablescrow is Ownable {
             token: _token,
             balance: balance
         });
-        
+
         emit CreateAndDeposit(
             id,
             _agent,
@@ -204,7 +204,13 @@ contract Stablescrow is Ownable {
             escrow.buyer,
             escrow.balance
         );
-        emit ReleaseWithSellerSignature(_id, escrow.seller, escrow.buyer, toAmount, agentFee);
+        emit ReleaseWithSellerSignature(
+            _id,
+            escrow.seller,
+            escrow.buyer,
+            toAmount,
+            agentFee
+        );
     }
 
     /**
@@ -236,34 +242,37 @@ contract Stablescrow is Ownable {
         );
     }
 
-    /**
-        @notice resolve dispute
-        @dev The sender should be the agent of the escrow
-    */
-    function resolveDispute(bytes32 _id) external {
+    function resolveDisputeSeller(
+        bytes32 _id,
+        bytes calldata _agentSignature
+    ) external {
         Escrow memory escrow = escrows[_id];
-        require(
-            msg.sender == escrow.agent || msg.sender == _owner,
-            "resolveDispute: the sender should be the agent or owner"
-        );
-        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
+        resolveDispute(
             _id,
-            escrow.buyer,
-            escrow.balance
-        );
-        emit DisputeResolved(
-            _id,
+            escrow.balance,
+            escrow.seller,
             escrow.agent,
+            _agentSignature
+        );
+    }
+
+    function resolveDisputeBuyer(
+        bytes32 _id,
+        bytes calldata _agentSignature
+    ) external {
+        Escrow memory escrow = escrows[_id];
+        resolveDispute(
+            _id,
+            escrow.balance,
             escrow.buyer,
-            toAmount,
-            agentFee
+            escrow.agent,
+            _agentSignature
         );
     }
 
     /**
         @notice Withdraw an amount from an escrow and the tokens send to seller address
         @dev the sender should be the buyer of the escrow
-
         @param _id escrow id
     */
     function buyerCancel(bytes32 _id) external {
@@ -311,6 +320,27 @@ contract Stablescrow is Ownable {
     }
 
     /// Internal functions
+
+    function resolveDispute(
+        bytes32 _id,
+        uint256 _balance,
+        address _sender,
+        address _agent,
+        bytes calldata _agentSignature
+    ) internal {
+        require(
+            (msg.sender == _sender &&
+                isValidSignature(_agent, _id, _agentSignature)) ||
+                msg.sender == _owner,
+            "resolveDispute: invalid sender or invalid agent signature"
+        );
+        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
+            _id,
+            _sender,
+            _balance
+        );
+        emit DisputeResolved(_id, _agent, _sender, toAmount, agentFee);
+    }
 
     function isValidSignature(
         address _signer,

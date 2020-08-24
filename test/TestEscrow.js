@@ -26,7 +26,7 @@ contract("Stablescrow", (accounts) => {
   let prevBalOwner = 0;
   let prevBalCreator = 0;
   let prevBalanceSeller = 0;
-  let prevBalalanceBuyer = 0;
+  let prevBalanceBuyer = 0;
   let prevBalAgent = 0;
   let prevBalEscrow = 0;
   let prevBalTokenEscrow = 0;
@@ -48,7 +48,7 @@ contract("Stablescrow", (accounts) => {
     prevBalCreator = await erc20.balanceOf(creator);
     prevBalAgent = await erc20.balanceOf(agent);
     prevBalanceSeller = await erc20.balanceOf(seller);
-    prevBalalanceBuyer = await erc20.balanceOf(buyer);
+    prevBalanceBuyer = await erc20.balanceOf(buyer);
 
     const escrow = await tokenEscrow.escrows(id);
     prevBalEscrow = escrow.balance;
@@ -191,7 +191,7 @@ contract("Stablescrow", (accounts) => {
       );
       expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
       expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
       expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
         prevBalTokenEscrow.sub(platatormFee)
       );
@@ -298,7 +298,7 @@ contract("Stablescrow", (accounts) => {
       expect(await erc20.balanceOf(seller)).to.eq.BN(
         prevBalanceSeller.sub(amount)
       );
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
       expect(escrow.balance).to.eq.BN(prevBalEscrow.add(toEscrow));
       expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
         prevBalTokenEscrow.add(amount)
@@ -373,7 +373,7 @@ contract("Stablescrow", (accounts) => {
       expect(await erc20.balanceOf(seller)).to.eq.BN(
         prevBalanceSeller.sub(amount)
       );
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
 
       expect(escrow.balance).to.eq.BN(toEscrow);
       expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
@@ -430,7 +430,7 @@ contract("Stablescrow", (accounts) => {
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
       expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
       expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
 
       expect(escrow.balance).to.eq.BN(prevBalEscrow);
       expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
@@ -487,7 +487,7 @@ contract("Stablescrow", (accounts) => {
       expect(await erc20.balanceOf(seller)).to.eq.BN(
         prevBalanceSeller.sub(amount)
       );
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
 
       expect(escrow.balance).to.eq.BN(prevBalEscrow.add(toEscrow));
       expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
@@ -535,7 +535,7 @@ contract("Stablescrow", (accounts) => {
       expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent.add(toAgent));
       expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
       expect(await erc20.balanceOf(buyer)).to.eq.BN(
-        prevBalalanceBuyer.add(toAmount)
+        prevBalanceBuyer.add(toAmount)
       );
 
       const escrowAfterRelease = await tokenEscrow.escrows(id);
@@ -639,7 +639,7 @@ contract("Stablescrow", (accounts) => {
       expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent.add(toAgent));
       expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
       expect(await erc20.balanceOf(buyer)).to.eq.BN(
-        prevBalalanceBuyer.add(toAmount)
+        prevBalanceBuyer.add(toAmount)
       );
 
       const escrowAfterRelease = await tokenEscrow.escrows(id);
@@ -704,8 +704,8 @@ contract("Stablescrow", (accounts) => {
       );
     });
   });
-  describe("resolveDispute", () => {
-    it("resolveDispute from agent", async () => {
+  describe("resolveDisputeBuyer", () => {
+    it("resolveDisputeBuyer from agent", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
       const escrow = await tokenEscrow.escrows(id);
@@ -713,8 +713,11 @@ contract("Stablescrow", (accounts) => {
       const toAgent = amount.mul(escrow.agentFee).div(BASE);
       const toAmount = amount.sub(toAgent);
 
+      const agentSignature = fixSignature(
+        await web3.eth.sign(id, basicEscrow.agent)
+      );
       const DisputeResolved = await toEvents(
-        tokenEscrow.resolveDispute(id, { from: agent }),
+        tokenEscrow.resolveDisputeBuyer(id, agentSignature, { from: buyer }),
         "DisputeResolved"
       );
 
@@ -735,7 +738,7 @@ contract("Stablescrow", (accounts) => {
       expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent.add(toAgent));
       expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
       expect(await erc20.balanceOf(buyer)).to.eq.BN(
-        prevBalalanceBuyer.add(toAmount)
+        prevBalanceBuyer.add(toAmount)
       );
 
       const escrowAfterDispute = await tokenEscrow.escrows(id);
@@ -744,14 +747,14 @@ contract("Stablescrow", (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it("resolveDispute from owner", async () => {
+    it("resolveDisputeBuyer from owner", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
       const escrow = await tokenEscrow.escrows(id);
       const amount = escrow.balance;
 
       const DisputeResolved = await toEvents(
-        tokenEscrow.resolveDispute(id, { from: owner }),
+        tokenEscrow.resolveDisputeBuyer(id, "0x", { from: owner }),
         "DisputeResolved"
       );
 
@@ -770,7 +773,7 @@ contract("Stablescrow", (accounts) => {
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
       expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
       expect(await erc20.balanceOf(buyer)).to.eq.BN(
-        prevBalalanceBuyer.add(amount)
+        prevBalanceBuyer.add(amount)
       );
 
       const escrowAfterDispute = await tokenEscrow.escrows(id);
@@ -779,17 +782,129 @@ contract("Stablescrow", (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it("resolveDispute with invalid address, should be the agent", async () => {
+    it("revert, the signature was correct but the sender was not buyer", async () => {
       const id = await createBasicEscrow();
 
+      await updateBalances(id);
+
+      const agentSignature = fixSignature(
+        await web3.eth.sign(id, basicEscrow.agent)
+      );
       await tryCatchRevert(
-        () => tokenEscrow.resolveDispute(id, { from: buyer }),
-        "resolveDispute: the sender should be the agent or owner"
+        () =>
+          tokenEscrow.resolveDisputeBuyer(id, agentSignature, {
+            from: agent,
+          }),
+        "resolveDispute: invalid sender or invalid agent signature"
+      );
+      await tryCatchRevert(
+        () =>
+          tokenEscrow.resolveDisputeBuyer(id, agentSignature, {
+            from: seller,
+          }),
+        "resolveDispute: invalid sender or invalid agent signature"
+      );
+    });
+  });
+  describe("resolveDisputeSeller", () => {
+    it("resolveDisputeSeller from agent", async () => {
+      const id = await createBasicEscrow();
+      await updateBalances(id);
+      const escrow = await tokenEscrow.escrows(id);
+      const amount = escrow.balance;
+      const toAgent = amount.mul(escrow.agentFee).div(BASE);
+      const toAmount = amount.sub(toAgent);
+
+      const agentSignature = fixSignature(
+        await web3.eth.sign(id, basicEscrow.agent)
+      );
+      const DisputeResolved = await toEvents(
+        tokenEscrow.resolveDisputeSeller(id, agentSignature, { from: seller }),
+        "DisputeResolved"
       );
 
+      expect(DisputeResolved._id, id);
+      expect(DisputeResolved._sender, agent);
+      expect(DisputeResolved._to, buyer);
+      expect(DisputeResolved._toAmount).to.eq.BN(toAmount);
+      expect(DisputeResolved._toAgent).to.eq.BN(toAgent);
+      expect(escrow.agent, agent);
+      expect(escrow.seller, seller);
+      expect(escrow.buyer, buyer);
+      expect(escrow.agentFee).to.eq.BN(500);
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
+      expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
+      expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
+      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent.add(toAgent));
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
+      expect(await erc20.balanceOf(seller)).to.eq.BN(
+        prevBalanceSeller.add(toAmount)
+      );
+
+      const escrowAfterDispute = await tokenEscrow.escrows(id);
+      expect(escrowAfterDispute.balance).to.eq.BN(prevBalEscrow.sub(amount));
+      expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
+        prevBalTokenEscrow.sub(amount)
+      );
+    });
+    it("resolveDisputeSeller from owner", async () => {
+      const id = await createBasicEscrow();
+      await updateBalances(id);
+      const escrow = await tokenEscrow.escrows(id);
+      const amount = escrow.balance;
+
+      const DisputeResolved = await toEvents(
+        tokenEscrow.resolveDisputeSeller(id, "0x", { from: owner }),
+        "DisputeResolved"
+      );
+
+      expect(DisputeResolved._id, id);
+      expect(DisputeResolved._sender, agent);
+      expect(DisputeResolved._to, buyer);
+      expect(DisputeResolved._toAmount).to.eq.BN(amount);
+      expect(escrow.agent, agent);
+      expect(escrow.seller, seller);
+      expect(escrow.buyer, buyer);
+      expect(escrow.agentFee).to.eq.BN(500);
+      expect(await tokenEscrow.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
+      expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
+      expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
+      expect(await erc20.balanceOf(seller)).to.eq.BN(
+        prevBalanceSeller.add(amount)
+      );
+
+      const escrowAfterDispute = await tokenEscrow.escrows(id);
+      expect(escrowAfterDispute.balance).to.eq.BN(prevBalEscrow.sub(amount));
+      expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
+        prevBalTokenEscrow.sub(amount)
+      );
+    });
+    it("revert, the signature was correct but the sender was not buyer", async () => {
+      const id = await createBasicEscrow();
+
+      await updateBalances(id);
+
+      const agentSignature = fixSignature(
+        await web3.eth.sign(id, basicEscrow.agent)
+      );
       await tryCatchRevert(
-        () => tokenEscrow.resolveDispute(id, { from: creator }),
-        "resolveDispute: the sender should be the agent or owner"
+        () =>
+          tokenEscrow.resolveDisputeSeller(id, agentSignature, {
+            from: agent,
+          }),
+        "resolveDispute: invalid sender or invalid agent signature"
+      );
+      await tryCatchRevert(
+        () =>
+          tokenEscrow.resolveDisputeSeller(id, agentSignature, {
+            from: buyer,
+          }),
+        "resolveDispute: invalid sender or invalid agent signature"
       );
     });
   });
@@ -824,7 +939,7 @@ contract("Stablescrow", (accounts) => {
       expect(await erc20.balanceOf(seller)).to.eq.BN(
         prevBalanceSeller.add(amount)
       );
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
       expect(escrow.balance).to.eq.BN(prevBalEscrow.sub(amount));
       expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
         prevBalTokenEscrow.sub(amount)
@@ -872,7 +987,7 @@ contract("Stablescrow", (accounts) => {
       expect(await erc20.balanceOf(seller)).to.eq.BN(
         prevBalanceSeller.add(prevBalEscrow)
       );
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
 
       expect(escrow.balance).to.eq.BN(0);
       expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(
@@ -905,7 +1020,7 @@ contract("Stablescrow", (accounts) => {
       expect(await erc20.balanceOf(seller)).to.eq.BN(
         prevBalanceSeller.add(prevBalEscrow)
       );
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalalanceBuyer);
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
 
       expect(escrow.balance).to.eq.BN(0);
       expect(await erc20.balanceOf(tokenEscrow.address)).to.eq.BN(

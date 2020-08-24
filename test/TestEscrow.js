@@ -1046,7 +1046,7 @@ contract("Stablescrow", (accounts) => {
     it("already exist", async () => {
       await tryCatchRevert(
         () => tokenEscrow.newAgent(accounts[9], 500, { from: owner }),
-        "newAgent: the agent alredy exists"
+        "newAgent: the agent already exists"
       );
     });
     it("invalid address", async () => {

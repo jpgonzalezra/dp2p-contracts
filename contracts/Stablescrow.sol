@@ -66,7 +66,6 @@ contract Stablescrow is Ownable {
 
     mapping(address => uint256) public platformBalanceByToken;
     mapping(address => uint256) public agentFeeByAgentAddress;
-    mapping(address => bool) public agents;
     mapping(bytes32 => Escrow) public escrows;
 
     function setPlatformFee(uint32 _platformFee) external onlyOwner {
@@ -103,8 +102,10 @@ contract Stablescrow is Ownable {
             _fee <= MAX_AGENT_FEE,
             "newAgent: The agent fee should be lower or equal than 1000"
         );
-        require(!agents[_agentAddress], "newAgent: the agent alredy exists");
-        agents[_agentAddress] = true;
+        require(
+            agentFeeByAgentAddress[_agentAddress] == 0,
+            "newAgent: the agent already exists"
+        );
         agentFeeByAgentAddress[_agentAddress] = _fee;
         emit NewAgent(_agentAddress, _fee);
     }
@@ -114,8 +115,10 @@ contract Stablescrow is Ownable {
             _agentAddress != address(0),
             "removeAgent: address 0x is invalid"
         );
-        require(agents[_agentAddress], "removeAgent: the agent does not exist");
-        agents[_agentAddress] = false;
+        require(
+            agentFeeByAgentAddress[_agentAddress] > 0,
+            "removeAgent: the agent does not exist"
+        );
         delete agentFeeByAgentAddress[_agentAddress];
         emit RemoveAgent(_agentAddress);
     }
@@ -138,7 +141,10 @@ contract Stablescrow is Ownable {
             _token != address(0),
             "createAndDeposit: address 0x is invalid"
         );
-        require(agents[_agent], "createAndDeposit: the agent is invalid");
+        require(
+            agentFeeByAgentAddress[_agent] > 0,
+            "createAndDeposit: the agent is invalid"
+        );
         address seller = msg.sender;
         // Calculate the escrow id
         uint256 agentFee = agentFeeByAgentAddress[_agent];
@@ -242,10 +248,9 @@ contract Stablescrow is Ownable {
         );
     }
 
-    function resolveDisputeSeller(
-        bytes32 _id,
-        bytes calldata _agentSignature
-    ) external {
+    function resolveDisputeSeller(bytes32 _id, bytes calldata _agentSignature)
+        external
+    {
         Escrow memory escrow = escrows[_id];
         resolveDispute(
             _id,
@@ -256,10 +261,9 @@ contract Stablescrow is Ownable {
         );
     }
 
-    function resolveDisputeBuyer(
-        bytes32 _id,
-        bytes calldata _agentSignature
-    ) external {
+    function resolveDisputeBuyer(bytes32 _id, bytes calldata _agentSignature)
+        external
+    {
         Escrow memory escrow = escrows[_id];
         resolveDispute(
             _id,

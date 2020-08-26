@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/cryptography/ECDSA.sol";
 import "./utils/Ownable.sol";
 import "./utils/SafeMath.sol";
 
-contract Stablescrow is Ownable {
+contract DP2P is Ownable {
     using SafeMath for uint256;
 
     /// User Events

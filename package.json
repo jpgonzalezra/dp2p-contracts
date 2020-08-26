@@ -1,5 +1,5 @@
 {
-  "name": "stablescrow",
+  "name": "dp2p",
   "version": "1.0.0",
   "files": [
     "contracts",
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/stablescrow/stablescrow.git"
+    "url": "https://github.com/jpgonzalezra/dp2p.git"
   },
   "keywords": [
     "solidity",
@@ -24,16 +24,16 @@
     "smart",
     "contracts"
   ],
-  "author": "stablescrow",
+  "author": "jpgonzalezra and shuffledex",
   "license": "",
   "bugs": {
-    "url": "https://github.com/stablescrow/stablescrow/issues"
+    "url": "https://github.com/dp2p/dp2p/issues"
   },
-  "homepage": "https://github.com/stablescrow/stablescrow",
+  "homepage": "https://github.com/dp2p/dp2p",
   "devDependencies": {
     "bn-chai": "1.0.1",
     "chai": "4.2.0",
-    "dotenv": "^8.2.0",
+    "dotenv": "8.2.0",
     "eslint": "4.19.1",
     "eslint-config-standard": "10.2.1",
     "eslint-plugin-import": "2.17.1",
@@ -41,7 +41,7 @@
     "eslint-plugin-promise": "3.8.0",
     "eslint-plugin-standard": "3.1.0",
     "ganache-cli": "6.4.3",
-    "sol-merger": "^3.1.0",
+    "sol-merger": "3.1.0",
     "solium": "1.2.4",
     "truffle": "5.0.12",
     "truffle-hdwallet-provider": "1.0.17",

@@ -1,5 +1,5 @@
 const TestToken = artifacts.require("TestToken");
-const Stablescrow = artifacts.require("Stablescrow");
+const DP2P = artifacts.require("DP2P");
 
 const {
   bn,
@@ -12,7 +12,7 @@ const {
   fixSignature,
 } = require("./helper/index.js");
 
-contract("Stablescrow", (accounts) => {
+contract("DP2P", (accounts) => {
   const WEI = bn(web3.utils.toWei("1"));
   const MAX_PLATFORM_FEE = 100;
   const BASE = bn(10000);
@@ -100,7 +100,7 @@ contract("Stablescrow", (accounts) => {
 
   before("deploy contracts", async function () {
     erc20 = await TestToken.new({ from: owner });
-    tokenEscrow = await Stablescrow.new({ from: owner });
+    tokenEscrow = await DP2P.new({ from: owner });
     await tokenEscrow.newAgent(agent, 500, { from: owner });
 
     await tokenEscrow.setPlatformFee(50, { from: owner });

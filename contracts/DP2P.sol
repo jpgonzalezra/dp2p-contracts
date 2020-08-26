@@ -71,7 +71,7 @@ contract DP2P is Ownable {
     function setPlatformFee(uint32 _platformFee) external onlyOwner {
         require(
             _platformFee <= MAX_PLATFORM_FEE,
-            "setPlatformFee: The platform fee should be lower than the MAX_PLATFORM_FEE"
+            "setPlatformFee: invalid-fee"
         );
         platformFee = _platformFee;
         emit SetFee(_platformFee);
@@ -82,42 +82,36 @@ contract DP2P is Ownable {
         address _to,
         uint256 _amount
     ) external onlyOwner {
-        require(_to != address(0), "platformWithdraw: address 0x is invalid");
+        require(_to != address(0), "platformWithdraw: error-transfer");
         for (uint256 i = 0; i < _tokenAddresses.length; i++) {
             address tokenAddress = _tokenAddresses[i];
             platformBalanceByToken[tokenAddress] = platformBalanceByToken[tokenAddress]
                 .sub(_amount);
             require(
                 IERC20(tokenAddress).transfer(_to, _amount),
-                "platformWithdraw: Error transfer to platform"
+                "platformWithdraw: error-transfer"
             );
         }
         emit PlatformWithdraw(_tokenAddresses, _to, _amount);
     }
 
     function newAgent(address _agentAddress, uint256 _fee) external onlyOwner {
-        require(_agentAddress != address(0), "newAgent: address 0x is invalid");
-        require(_fee > 0, "newAgent: the agent fee must be greater than 0");
-        require(
-            _fee <= MAX_AGENT_FEE,
-            "newAgent: The agent fee should be lower or equal than 1000"
-        );
+        require(_agentAddress != address(0), "newAgent: invalid-address");
+        require(_fee > 0, "newAgent: invalid-fee");
+        require(_fee <= MAX_AGENT_FEE, "newAgent: invalid-agent-fee");
         require(
             agentFeeByAgentAddress[_agentAddress] == 0,
-            "newAgent: the agent already exists"
+            "newAgent: invalid agent"
         );
         agentFeeByAgentAddress[_agentAddress] = _fee;
         emit NewAgent(_agentAddress, _fee);
     }
 
     function removeAgent(address _agentAddress) external onlyOwner {
-        require(
-            _agentAddress != address(0),
-            "removeAgent: address 0x is invalid"
-        );
+        require(_agentAddress != address(0), "removeAgent: invalid-address");
         require(
             agentFeeByAgentAddress[_agentAddress] > 0,
-            "removeAgent: the agent does not exist"
+            "removeAgent: invalid-agent"
         );
         delete agentFeeByAgentAddress[_agentAddress];
         emit RemoveAgent(_agentAddress);
@@ -137,13 +131,10 @@ contract DP2P is Ownable {
         address _token,
         uint256 _salt
     ) external returns (bytes32 id) {
-        require(
-            _token != address(0),
-            "createAndDeposit: address 0x is invalid"
-        );
+        require(_token != address(0), "createAndDeposit: invalid-address");
         require(
             agentFeeByAgentAddress[_agent] > 0,
-            "createAndDeposit: the agent is invalid"
+            "createAndDeposit: invalid-agent"
         );
         address seller = msg.sender;
         // Calculate the escrow id
@@ -153,14 +144,14 @@ contract DP2P is Ownable {
         /// Check if the escrow was created
         require(
             escrows[id].agent == address(0),
-            "createAndDeposit: the escrow exists"
+            "createAndDeposit: invalid-escrow"
         );
 
         // Transfer the tokens from the sender
         IERC20 token = IERC20(_token);
         require(
             token.transferFrom(msg.sender, address(this), _amount),
-            "createAndDeposit: error deposit tokens"
+            "createAndDeposit: error-deposit"
         );
 
         // Assign the fee amount to platform
@@ -202,7 +193,7 @@ contract DP2P is Ownable {
         require(
             msg.sender == escrow.buyer &&
                 isValidSignature(escrow.seller, _id, _sellerSignature),
-            "releaseWithSellerSignature: invalid sender or invalid seller signature"
+            "releaseWithSellerSignature: invalid-sender-or-signature"
         );
 
         (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
@@ -231,7 +222,7 @@ contract DP2P is Ownable {
         require(
             msg.sender == escrow.buyer &&
                 isValidSignature(escrow.agent, _id, _agentSignature),
-            "releaseWithAgentSignature: invalid sender or invalid agent signature"
+            "releaseWithAgentSignature: invalid-sender-or-signature"
         );
 
         (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
@@ -283,7 +274,7 @@ contract DP2P is Ownable {
         Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.buyer,
-            "buyerCancel: the sender should be the buyer"
+            "buyerCancel: invalid-sender"
         );
         (uint256 toAmount, uint256 agentFee) = _withdrawWithoutFee(
             _id,
@@ -303,7 +294,7 @@ contract DP2P is Ownable {
         Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.agent || msg.sender == _owner,
-            "cancel: the sender should be the agent or platform"
+            "cancel: invalid-sender"
         );
 
         uint256 balance = escrow.balance;
@@ -317,7 +308,7 @@ contract DP2P is Ownable {
         if (balance > 0) {
             require(
                 token.transfer(seller, balance),
-                "cancel: error transfer to the seller"
+                "cancel: error-transfer"
             );
         }
         emit Cancel(_id, balance);
@@ -336,7 +327,7 @@ contract DP2P is Ownable {
             (msg.sender == _sender &&
                 isValidSignature(_agent, _id, _agentSignature)) ||
                 msg.sender == _owner,
-            "resolveDispute: invalid sender or invalid agent signature"
+            "resolveDispute: invalid-sender-or-signature"
         );
         (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
             _id,
@@ -408,7 +399,7 @@ contract DP2P is Ownable {
         bool _withAgentFee
     ) internal returns (uint256 toAmount, uint256 agentAmount) {
         Escrow storage escrow = escrows[_id];
-        require(escrow.balance > 0, "_withdraw: The escrow has not balance");
+        require(escrow.balance > 0, "_withdraw: not-balance");
         IERC20 token = IERC20(escrow.token);
 
         if (msg.sender == _owner) {
@@ -426,7 +417,7 @@ contract DP2P is Ownable {
             /// send fee to the agent
             require(
                 token.transfer(escrow.agent, agentAmount),
-                "_withdraw: Error transfer tokens to the agent"
+                "_withdraw: error-transfer-agent"
             );
         }
         /// update escrow balance in storage
@@ -434,7 +425,7 @@ contract DP2P is Ownable {
         /// send amount to `_to` address
         require(
             token.transfer(_to, toAmount),
-            "_withdraw: Error transfer to the _to"
+            "_withdraw: error-transfer-to"
         );
     }
 

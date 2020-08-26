@@ -140,11 +140,11 @@ contract("DP2P", (accounts) => {
       const wrongFee = maxFeeAllowed + 1;
       await tryCatchRevert(
         () => tokenEscrow.setPlatformFee(wrongFee, { from: owner }),
-        "setPlatformFee: The platform fee should be lower than the MAX_PLATFORM_FEE"
+        "setPlatformFee: invalid-fee"
       );
       await tryCatchRevert(
         () => tokenEscrow.setPlatformFee(maxUint(256), { from: owner }),
-        "setPlatformFee: The platform fee should be lower than the MAX_PLATFORM_FEE"
+        "setPlatformFee: invalid-fee"
       );
     });
   });
@@ -214,7 +214,7 @@ contract("DP2P", (accounts) => {
           tokenEscrow.platformWithdraw([erc20.address], address0x, 0, {
             from: owner,
           }),
-        "platformWithdraw: address 0x is invalid"
+        "platformWithdraw: error-transfer"
       );
     });
   });
@@ -229,19 +229,19 @@ contract("DP2P", (accounts) => {
           tokenEscrow.releaseWithSellerSignature(id, sellerSignature, {
             from: seller,
           }),
-        "releaseWithSellerSignature: invalid sender or invalid seller signature"
+        "releaseWithSellerSignature: invalid-sender-or-signature"
       );
     });
     it("withdraw to seller non-escrow", async () => {
       await tryCatchRevert(
         () => tokenEscrow.buyerCancel(random32(), { from: agent }),
-        "buyerCancel: the sender should be the buyer"
+        "buyerCancel: invalid-sender"
       );
     });
     it("cancel an escrow non-existent", async () => {
       await tryCatchRevert(
         () => tokenEscrow.cancel(random32(), { from: agent }),
-        "cancel: the sender should be the agent"
+        "cancel: invalid-sender"
       );
     });
   });
@@ -318,7 +318,7 @@ contract("DP2P", (accounts) => {
               from: seller,
             }
           ),
-        "createAndDeposit: the escrow exists"
+        "createAndDeposit: invalid-escrow"
       );
     });
     it("create escrow and deposit tokens", async () => {
@@ -556,7 +556,7 @@ contract("DP2P", (accounts) => {
           tokenEscrow.releaseWithSellerSignature(id, sellerSignature, {
             from: buyer,
           }),
-        "releaseWithSellerSignature: invalid sender or invalid seller signature"
+        "releaseWithSellerSignature: invalid-sender-or-signature"
       );
     });
     it("revert release escrow, signature invalid (buyer sign)", async () => {
@@ -572,7 +572,7 @@ contract("DP2P", (accounts) => {
           tokenEscrow.releaseWithSellerSignature(id, buyerSignature, {
             from: buyer,
           }),
-        "releaseWithSellerSignature: invalid sender or invalid seller signature"
+        "releaseWithSellerSignature: invalid-sender-or-signature"
       );
     });
     it("revert release escrow, the signature was correct but the sender was not buyer", async () => {
@@ -588,14 +588,14 @@ contract("DP2P", (accounts) => {
           tokenEscrow.releaseWithSellerSignature(id, sellerSignature, {
             from: agent,
           }),
-        "releaseWithSellerSignature: invalid sender or invalid seller signature"
+        "releaseWithSellerSignature: invalid-sender-or-signature"
       );
       await tryCatchRevert(
         () =>
           tokenEscrow.releaseWithSellerSignature(id, sellerSignature, {
             from: seller,
           }),
-        "releaseWithSellerSignature: invalid sender or invalid seller signature"
+        "releaseWithSellerSignature: invalid-sender-or-signature"
       );
     });
   });
@@ -661,7 +661,7 @@ contract("DP2P", (accounts) => {
           tokenEscrow.releaseWithAgentSignature(id, agentSignature, {
             from: buyer,
           }),
-        "releaseWithAgentSignature: invalid sender or invalid agent signature"
+        "releaseWithAgentSignature: invalid-sender-or-signature"
       );
     });
     it("revert release escrow, signature invalid (buyer sign)", async () => {
@@ -677,7 +677,7 @@ contract("DP2P", (accounts) => {
           tokenEscrow.releaseWithAgentSignature(id, buyerSignature, {
             from: buyer,
           }),
-        "releaseWithAgentSignature: invalid sender or invalid agent signature"
+        "releaseWithAgentSignature: invalid-sender-or-signature"
       );
     });
     it("revert release escrow, the signature was correct but the sender was not buyer", async () => {
@@ -693,14 +693,14 @@ contract("DP2P", (accounts) => {
           tokenEscrow.releaseWithAgentSignature(id, agentSignature, {
             from: agent,
           }),
-        "releaseWithAgentSignature: invalid sender or invalid agent signature"
+        "releaseWithAgentSignature: invalid-sender-or-signature"
       );
       await tryCatchRevert(
         () =>
           tokenEscrow.releaseWithAgentSignature(id, agentSignature, {
             from: seller,
           }),
-        "releaseWithAgentSignature: invalid sender or invalid agent signature"
+        "releaseWithAgentSignature: invalid-sender-or-signature"
       );
     });
   });
@@ -795,14 +795,14 @@ contract("DP2P", (accounts) => {
           tokenEscrow.resolveDisputeBuyer(id, agentSignature, {
             from: agent,
           }),
-        "resolveDispute: invalid sender or invalid agent signature"
+        "resolveDispute: invalid-sender-or-signature"
       );
       await tryCatchRevert(
         () =>
           tokenEscrow.resolveDisputeBuyer(id, agentSignature, {
             from: seller,
           }),
-        "resolveDispute: invalid sender or invalid agent signature"
+        "resolveDispute: invalid-sender-or-signature"
       );
     });
   });
@@ -897,14 +897,14 @@ contract("DP2P", (accounts) => {
           tokenEscrow.resolveDisputeSeller(id, agentSignature, {
             from: agent,
           }),
-        "resolveDispute: invalid sender or invalid agent signature"
+        "resolveDispute: invalid-sender-or-signature"
       );
       await tryCatchRevert(
         () =>
           tokenEscrow.resolveDisputeSeller(id, agentSignature, {
             from: buyer,
           }),
-        "resolveDispute: invalid sender or invalid agent signature"
+        "resolveDispute: invalid-sender-or-signature"
       );
     });
   });
@@ -950,12 +950,12 @@ contract("DP2P", (accounts) => {
 
       await tryCatchRevert(
         () => tokenEscrow.buyerCancel(id, { from: seller }),
-        "buyerCancel: the sender should be the buyer"
+        "buyerCancel: invalid-sender"
       );
 
       await tryCatchRevert(
         () => tokenEscrow.buyerCancel(id, { from: creator }),
-        "buyerCancel: the sender should be the buyer"
+        "buyerCancel: invalid-sender"
       );
     });
   });
@@ -1032,7 +1032,7 @@ contract("DP2P", (accounts) => {
 
       await tryCatchRevert(
         () => tokenEscrow.cancel(id, { from: seller }),
-        "cancel: the sender should be the agent"
+        "cancel: invalid-sender"
       );
     });
   });
@@ -1046,23 +1046,23 @@ contract("DP2P", (accounts) => {
     it("already exist", async () => {
       await tryCatchRevert(
         () => tokenEscrow.newAgent(accounts[9], 500, { from: owner }),
-        "newAgent: the agent already exists"
+        "newAgent: invalid agent"
       );
     });
     it("invalid address", async () => {
       await tryCatchRevert(
         () => tokenEscrow.newAgent(address0x, 500, { from: owner }),
-        "newAgent: address 0x is invalid"
+        "newAgent: invalid-address"
       );
     });
     it("set a higth agent fee(>10%)", async () => {
       await tryCatchRevert(
         () => tokenEscrow.newAgent(accounts[9], 1001, { from: owner }),
-        "newAgent: The agent fee should be lower or equal than 1000"
+        "newAgent: invalid-agent-fee"
       );
       await tryCatchRevert(
         () => tokenEscrow.newAgent(accounts[9], maxUint(256), { from: owner }),
-        "newAgent: The agent fee should be lower or equal than 1000"
+        "newAgent: invalid-agent-fee"
       );
     });
   });
@@ -1076,13 +1076,13 @@ contract("DP2P", (accounts) => {
     it("not exist", async () => {
       await tryCatchRevert(
         () => tokenEscrow.removeAgent(accounts[9], { from: owner }),
-        "removeAgent: the agent does not exist"
+        "removeAgent: invalid-agent"
       );
     });
     it("invalid address", async () => {
       await tryCatchRevert(
         () => tokenEscrow.removeAgent(address0x, { from: owner }),
-        "removeAgent: address 0x is invalid"
+        "removeAgent: invalid-address"
       );
     });
   });

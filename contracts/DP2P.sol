@@ -48,7 +48,6 @@ contract DP2P is Ownable {
     event SetFee(uint256 _fee);
     event NewAgent(address _agent, uint256 _fee);
     event RemoveAgent(address _agent);
-    event PlatformWithdraw(address[] _tokens, address _to, uint256 _amount);
 
     struct Escrow {
         address agent;
@@ -79,20 +78,18 @@ contract DP2P is Ownable {
 
     function platformWithdraw(
         address[] calldata _tokenAddresses,
-        address _to,
-        uint256 _amount
+        address _to
     ) external onlyOwner {
         require(_to != address(0), "platformWithdraw: error-transfer");
         for (uint256 i = 0; i < _tokenAddresses.length; i++) {
             address tokenAddress = _tokenAddresses[i];
-            platformBalanceByToken[tokenAddress] = platformBalanceByToken[tokenAddress]
-                .sub(_amount);
+            uint256 amount = platformBalanceByToken[tokenAddress];
+            platformBalanceByToken[tokenAddress] = 0;
             require(
-                IERC20(tokenAddress).transfer(_to, _amount),
+                IERC20(tokenAddress).transfer(_to, amount),
                 "platformWithdraw: error-transfer"
             );
         }
-        emit PlatformWithdraw(_tokenAddresses, _to, _amount);
     }
 
     function newAgent(address _agentAddress, uint256 _fee) external onlyOwner {

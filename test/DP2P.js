@@ -38,9 +38,9 @@ contract("DP2P", (accounts) => {
   let salt = 0;
   let basicEscrow;
 
-  const approve = async (beneficiary, amount) => {
+  const mintAndApproveTokens = async (beneficiary, amount) => {
     await erc20.mint(beneficiary, amount, { from: owner });
-    await erc20.approve(dp2p.address, amount, { from: beneficiary });
+    await erc20.mintAndApproveTokens(dp2p.address, amount, { from: beneficiary });
   };
 
   const updateBalances = async (id) => {
@@ -71,7 +71,7 @@ contract("DP2P", (accounts) => {
 
   const createBasicEscrow = async (amount = WEI) => {
     basicEscrow.salt = ++salt;
-    await approve(seller, amount);
+    await mintAndApproveTokens(seller, amount);
     const CreateAndDeposit = await toEvents(
       dp2p.createAndDeposit(
         amount,
@@ -249,7 +249,7 @@ contract("DP2P", (accounts) => {
     it("create escrow and deposit", async () => {
       const amount = WEI;
       const internalSalt = 999;
-      await approve(seller, amount);
+      await mintAndApproveTokens(seller, amount);
       const id = await calcId(
         agent2,
         seller,
@@ -326,7 +326,7 @@ contract("DP2P", (accounts) => {
     it("create escrow and deposit tokens", async () => {
       const amount = WEI;
 
-      await approve(seller, amount);
+      await mintAndApproveTokens(seller, amount);
       const internalSalt = Math.floor(Math.random() * 1000000);
       const id = await calcId(
         agent,
@@ -385,7 +385,7 @@ contract("DP2P", (accounts) => {
     it("deposit 0 amount in an escrow", async () => {
       const amount = bn(0);
 
-      await approve(seller, amount);
+      await mintAndApproveTokens(seller, amount);
       const internalSalt = Math.floor(Math.random() * 1000000);
       const id = await calcId(
         agent,
@@ -442,7 +442,7 @@ contract("DP2P", (accounts) => {
     it("deposit higth amount in an escrow", async () => {
       const amount = maxUint(240);
 
-      await approve(seller, amount);
+      await mintAndApproveTokens(seller, amount);
       const internalSalt = Math.floor(Math.random() * 1000000);
       const id = await calcId(
         agent,

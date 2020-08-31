@@ -1,7 +1,8 @@
 const Dai = artifacts.require("Dai");
 const DP2P = artifacts.require("DP2P");
+const DP2PDaiWrapper = artifacts.require("DP2PDaiWrapper");
 
-const { bn, expect, toEvents } = require("./helper/index.js");
+const { bn, expect, toEvents, signDaiPermit } = require("./helper/index.js");
 
 contract("DP2P", (accounts) => {
   const WEI = bn(web3.utils.toWei("1"));
@@ -13,12 +14,12 @@ contract("DP2P", (accounts) => {
   const seller = accounts[3];
   const buyer = accounts[4];
 
+  let dp2pDaiWrapper;
   let dp2p;
   let dai;
 
-  const mintAndApproveTokens = async (beneficiary, amount) => {
+  const mint = async (beneficiary, amount) => {
     await dai.mint(beneficiary, amount, { from: owner });
-    await dai.mintAndApproveTokens(dp2p.address, amount, { from: beneficiary });
   };
 
   const calcId = (_agent, _seller, _buyer, _fee, _token, _salt) =>
@@ -35,6 +36,7 @@ contract("DP2P", (accounts) => {
   before("deploy contracts", async function () {
     dai = await Dai.new(3, { from: owner });
     dp2p = await DP2P.new({ from: owner });
+    dp2pDaiWrapper = await DP2PDaiWrapper.new(dp2p.address, dai.address, { from: owner });
     await dp2p.newAgent(agent, 500, { from: owner });
     await dp2p.setPlatformFee(50, { from: owner });
   });
@@ -51,16 +53,21 @@ contract("DP2P", (accounts) => {
         dai.address,
         internalSalt
       );
-      await dp2p.newAgent(agent2, 500, { from: owner });
 
-      await mintAndApproveTokens(seller, amount);
+      await dp2p.newAgent(agent2, 500, { from: owner });
+      await mint(seller, amount);
+
+      const { v, r, s } = await signDaiPermit(dai, dp2pDaiWrapper.address, seller);
       const CreateAndDeposit = await toEvents(
-        dp2p.createAndDeposit(
+        dp2pDaiWrapper.createAndDeposit(
           amount,
           agent2,
           buyer,
           dai.address,
-          internalSalt,
+          nonce,
+          v,
+          r,
+          s,
           {
             from: seller,
           }

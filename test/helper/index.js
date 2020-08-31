@@ -86,17 +86,15 @@ module.exports.fixSignature = (signature) => {
   const vHex = v.toString(16);
   return signature.slice(0, 130) + vHex;
 };
-module.exports.signDaiPermit = (web3, signer, d2p2Address, daiAddress) => {
+module.exports.signDaiPermit = async (dai, d2p2Address, signer) => {
   const domainData = {
     name: "Dai Stablecoin",
     version: "1",
-    chainId: 42,
-    verifyingContract: daiAddress,
+    chainId: 5777,
+    verifyingContract: dai.address,
   };
 
-  const daiInstance = getERCContractInstance(web3, "DAI");
-
-  const nonce = await daiInstance.methods.nonces(signer).call();
+  const nonce = await dai.nonces(signer);
   const message = {
     holder: signer,
     spender: d2p2Address,

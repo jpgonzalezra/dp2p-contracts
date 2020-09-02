@@ -8,6 +8,7 @@ import "./utils/SafeMath.sol";
 
 contract DP2P is Ownable {
     using SafeMath for uint256;
+    using ECDSA for bytes32;
 
     /// User Events
 
@@ -339,9 +340,8 @@ contract DP2P is Ownable {
         bytes32 _data,
         bytes memory _signature
     ) internal pure returns (bool) {
-        return
-            _signer ==
-            ECDSA.recover(ECDSA.toEthSignedMessageHash(_data), _signature);
+        bytes32 messageHash = _data.toEthSignedMessageHash();
+        return _signer == messageHash.recover(_signature);
     }
 
     function _calculateId(

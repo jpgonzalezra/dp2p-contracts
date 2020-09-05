@@ -40,7 +40,7 @@ contract("DP2P", (accounts) => {
 
   const mintAndApproveTokens = async (beneficiary, amount) => {
     await erc20.mint(beneficiary, amount, { from: owner });
-    await erc20.mintAndApproveTokens(dp2p.address, amount, { from: beneficiary });
+    await erc20.approve(dp2p.address, amount, { from: beneficiary });
   };
 
   const updateBalances = async (id) => {
@@ -53,9 +53,7 @@ contract("DP2P", (accounts) => {
     const escrow = await dp2p.escrows(id);
     prevBalEscrow = escrow.balance;
     prevBalTokenEscrow = await erc20.balanceOf(dp2p.address);
-    prevPlatformBalance = await dp2p.platformBalanceByToken(
-      erc20.address
-    );
+    prevPlatformBalance = await dp2p.platformBalanceByToken(erc20.address);
   };
 
   const calcId = (_agent, _seller, _buyer, _fee, _token, _salt) =>
@@ -172,16 +170,10 @@ contract("DP2P", (accounts) => {
       const platatormFee = WEI.mul(fee).div(BASE);
       await updateBalances(id);
 
-      const platformWithdraw = await toEvents(
-        dp2p.platformWithdraw([erc20.address], creator, {
-          from: owner,
-        }),
-        "PlatformWithdraw"
-      );
+      await dp2p.platformWithdraw([erc20.address], creator, {
+        from: owner,
+      });
 
-      expect(platformWithdraw._to, creator);
-      expect(platformWithdraw._token, erc20.address);
-      expect(platformWithdraw._amount).to.eq.BN(platatormFee);
       expect(await dp2p.platformBalanceByToken(erc20.address)).to.eq.BN(
         prevPlatformBalance.sub(platatormFee)
       );
@@ -196,22 +188,10 @@ contract("DP2P", (accounts) => {
         prevBalTokenEscrow.sub(platatormFee)
       );
     });
-    it("want to withdraw with invalid amount", async () => {
-      const id = await createBasicEscrow();
-      await updateBalances(id);
-
-      await tryCatchRevert(
-        () =>
-          dp2p.platformWithdraw([erc20.address], creator, {
-            from: owner,
-          }),
-        "Sub overflow"
-      );
-    });
     it("want to withdraw to invalid address", async function () {
       await tryCatchRevert(
         () =>
-          dp2p.platformWithdraw([erc20.address], address0x, 0, {
+          dp2p.platformWithdraw([erc20.address], address0x, {
             from: owner,
           }),
         "platformWithdraw: error-transfer"
@@ -310,16 +290,9 @@ contract("DP2P", (accounts) => {
       const amount = WEI;
       await tryCatchRevert(
         () =>
-          dp2p.createAndDeposit(
-            amount,
-            agent2,
-            buyer,
-            erc20.address,
-            999,
-            {
-              from: seller,
-            }
-          ),
+          dp2p.createAndDeposit(amount, agent2, buyer, erc20.address, 999, {
+            from: seller,
+          }),
         "createAndDeposit: invalid-escrow"
       );
     });
@@ -435,9 +408,7 @@ contract("DP2P", (accounts) => {
       expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
 
       expect(escrow.balance).to.eq.BN(prevBalEscrow);
-      expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
-        prevBalTokenEscrow
-      );
+      expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(prevBalTokenEscrow);
     });
     it("deposit higth amount in an escrow", async () => {
       const amount = maxUint(240);
@@ -610,9 +581,7 @@ contract("DP2P", (accounts) => {
       const amount = escrow.balance;
       const toAgent = amount.mul(escrow.agentFee).div(BASE);
 
-      const agentSignature = fixSignature(
-        await web3.eth.sign(id, agent)
-      );
+      const agentSignature = fixSignature(await web3.eth.sign(id, agent));
       const ReleaseWithAgentSignature = await toEvents(
         dp2p.releaseWithAgentSignature(id, agentSignature, {
           from: buyer,
@@ -968,10 +937,7 @@ contract("DP2P", (accounts) => {
 
       await updateBalances(id);
 
-      const Cancel = await toEvents(
-        dp2p.cancel(id, { from: agent }),
-        "Cancel"
-      );
+      const Cancel = await toEvents(dp2p.cancel(id, { from: agent }), "Cancel");
 
       expect(Cancel._id, id);
       expect(Cancel._amount).to.eq.BN(prevBalEscrow);
@@ -1001,10 +967,7 @@ contract("DP2P", (accounts) => {
       const id = await createBasicEscrow();
       await updateBalances(id);
 
-      const Cancel = await toEvents(
-        dp2p.cancel(id, { from: owner }),
-        "Cancel"
-      );
+      const Cancel = await toEvents(dp2p.cancel(id, { from: owner }), "Cancel");
 
       expect(Cancel._id, id);
       expect(Cancel._amount).to.eq.BN(prevBalEscrow);

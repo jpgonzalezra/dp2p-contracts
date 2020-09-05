@@ -590,8 +590,9 @@ contract("DP2P", (accounts) => {
       const escrow = await tokenEscrow.escrows(id);
       const amount = escrow.balance;
       const toAgent = amount.mul(escrow.agentFee).div(BASE);
+
       const agentSignature = fixSignature(
-        await web3.eth.sign(id, basicEscrow.agent)
+        await web3.eth.sign(id, agent)
       );
       const ReleaseWithAgentSignature = await toEvents(
         tokenEscrow.releaseWithAgentSignature(id, agentSignature, {

@@ -28,4 +28,4 @@ contract address:    0xDDf20B47E18f7d016B9db49C1a472B17EbD6a45F
 contract address:    0xd0f231CaB3b8976A00C23863118A223D2ea73ece
 
 ## DP2P
-contract address:    0xe1880a3EE913F0258Ae5a3FC2E57c0228abB4b4e
+contract address:    0x3933aD17d8d36375b16Fa9c0730AFc688ba30273

@@ -77,10 +77,10 @@ contract DP2P is Ownable {
         emit SetFee(_platformFee);
     }
 
-    function platformWithdraw(
-        address[] calldata _tokenAddresses,
-        address _to
-    ) external onlyOwner {
+    function platformWithdraw(address[] calldata _tokenAddresses, address _to)
+        external
+        onlyOwner
+    {
         require(_to != address(0), "platformWithdraw: error-transfer");
         for (uint256 i = 0; i < _tokenAddresses.length; i++) {
             address tokenAddress = _tokenAddresses[i];
@@ -121,7 +121,6 @@ contract DP2P is Ownable {
              the seller of the escrow should be the sender
         @return id of the escrow
     */
-
     function createAndDeposit(
         uint256 _amount,
         address _agent,
@@ -190,7 +189,7 @@ contract DP2P is Ownable {
         Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.buyer &&
-                isValidSignature(escrow.seller, _id, _sellerSignature),
+                escrow.seller == getSigner(_id, _sellerSignature),
             "releaseWithSellerSignature: invalid-sender-or-signature"
         );
 
@@ -219,7 +218,7 @@ contract DP2P is Ownable {
         Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.buyer &&
-                isValidSignature(escrow.agent, _id, _agentSignature),
+                escrow.agent == getSigner(_id, _agentSignature),
             "releaseWithAgentSignature: invalid-sender-or-signature"
         );
 
@@ -270,10 +269,7 @@ contract DP2P is Ownable {
     */
     function buyerCancel(bytes32 _id) external {
         Escrow memory escrow = escrows[_id];
-        require(
-            msg.sender == escrow.buyer,
-            "buyerCancel: invalid-sender"
-        );
+        require(msg.sender == escrow.buyer, "buyerCancel: invalid-sender");
         (uint256 toAmount, uint256 agentFee) = _withdrawWithoutFee(
             _id,
             escrow.seller,
@@ -304,10 +300,7 @@ contract DP2P is Ownable {
 
         /// transfer tokens to the seller just if the escrow has balance
         if (balance > 0) {
-            require(
-                token.transfer(seller, balance),
-                "cancel: error-transfer"
-            );
+            require(token.transfer(seller, balance), "cancel: error-transfer");
         }
         emit Cancel(_id, balance);
     }
@@ -322,8 +315,7 @@ contract DP2P is Ownable {
         bytes calldata _agentSignature
     ) internal {
         require(
-            (msg.sender == _sender &&
-                isValidSignature(_agent, _id, _agentSignature)) ||
+            (msg.sender == _sender && _agent == getSigner(_id, _agentSignature)) ||
                 msg.sender == _owner,
             "resolveDispute: invalid-sender-or-signature"
         );
@@ -335,13 +327,13 @@ contract DP2P is Ownable {
         emit DisputeResolved(_id, _agent, _sender, toAmount, agentFee);
     }
 
-    function isValidSignature(
-        address _signer,
-        bytes32 _data,
-        bytes memory _signature
-    ) internal pure returns (bool) {
+    function getSigner(bytes32 _data, bytes memory _signature)
+        internal
+        pure
+        returns (address)
+    {
         bytes32 messageHash = _data.toEthSignedMessageHash();
-        return _signer == messageHash.recover(_signature);
+        return messageHash.recover(_signature);
     }
 
     function _calculateId(
@@ -420,10 +412,7 @@ contract DP2P is Ownable {
         /// update escrow balance in storage
         escrow.balance = escrow.balance.sub(toAmount);
         /// send amount to `_to` address
-        require(
-            token.transfer(_to, toAmount),
-            "_withdraw: error-transfer-to"
-        );
+        require(token.transfer(_to, toAmount), "_withdraw: error-transfer-to");
     }
 
     /**

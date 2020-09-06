@@ -117,5 +117,24 @@ contract Dai {
         emit Transfer(address(0), dst, wad);
         totalSupply = add(totalSupply, wad);
     }
+
+    function getDigest(address holder, address spender, uint256 nonce, uint256 expiry,
+                    bool allowed) external view returns (bytes32 digest) {
+        digest =
+            keccak256(abi.encodePacked(
+                "\x19\x01",
+                DOMAIN_SEPARATOR,
+                keccak256(abi.encode(PERMIT_TYPEHASH,
+                                     holder,
+                                     spender,
+                                     nonce,
+                                     expiry,
+                                     allowed))
+        ));
+    }
+
+    function getHolder(bytes32 digest, uint8 v, bytes32 r, bytes32 s) external pure returns (address) {
+        return ecrecover(digest, v, r, s);
+    }
  
 }

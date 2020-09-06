@@ -34,7 +34,7 @@ contract("DP2P", (accounts) => {
     );
 
   before("deploy contracts", async function () {
-    dai = await Dai.new(3, { from: owner });
+    dai = await Dai.new(5777, { from: owner });
     dp2p = await DP2P.new({ from: owner });
     dp2pDaiWrapper = await DP2PDaiWrapper.new(dp2p.address, dai.address, { from: owner });
     await dp2p.newAgent(agent, 500, { from: owner });
@@ -44,20 +44,25 @@ contract("DP2P", (accounts) => {
   describe("Simple flow with DAI permite", () => {
     it("create, deposit, and release", async () => {
       const amount = WEI;
-      const internalSalt = 999;
+      const nonce = await dai.nonces(seller);
       const id = await calcId(
         agent2,
         seller,
         buyer,
         500,
         dai.address,
-        internalSalt
+        nonce
       );
 
       await dp2p.newAgent(agent2, 500, { from: owner });
       await mint(seller, amount);
+      console.log("seller", seller)
+      const privKey = Buffer.from("1972c66239e8c11c8c76d554d5ae4e1031404572c3b01e8ed6a360dcf480d11d", 'hex');
+      const { v, r, s } = await signDaiPermit(dai, dp2p.address, nonce, seller, privKey);
 
-      const { v, r, s } = await signDaiPermit(dai, dp2pDaiWrapper.address, seller);
+      const digest = await dai.getDigest(seller, dp2p.address, nonce, 0, true);
+      expect(seller, await dai.getHolder(digest, v, r, s));
+
       const CreateAndDeposit = await toEvents(
         dp2pDaiWrapper.createAndDeposit(
           amount,

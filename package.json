@@ -34,6 +34,7 @@
     "bn-chai": "1.0.1",
     "chai": "4.2.0",
     "dotenv": "8.2.0",
+    "eth-sig-util": "^2.5.3",
     "eslint": "4.19.1",
     "eslint-config-standard": "10.2.1",
     "eslint-plugin-import": "2.17.1",
@@ -48,6 +49,6 @@
     "truffle-plugin-verify": "0.3.11"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "3.1.0"
+    "@openzeppelin/contracts": "3.1.0",
   }
 }

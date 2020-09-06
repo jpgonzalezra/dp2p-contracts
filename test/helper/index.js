@@ -1,19 +1,7 @@
+const sigUtil = require('eth-sig-util')
+
 const BN = web3.utils.BN;
 const expect = require("chai").use(require("bn-chai")(BN)).expect;
-const domainSchema = [
-  { name: "name", type: "string" },
-  { name: "version", type: "string" },
-  { name: "chainId", type: "uint256" },
-  { name: "verifyingContract", type: "address" },
-];
-
-const permitSchema = [
-  { name: "holder", type: "address" },
-  { name: "spender", type: "address" },
-  { name: "nonce", type: "uint256" },
-  { name: "expiry", type: "uint256" },
-  { name: "allowed", type: "bool" },
-];
 
 module.exports.expect = expect;
 module.exports.address0x = "0x0000000000000000000000000000000000000000";
@@ -86,7 +74,23 @@ module.exports.fixSignature = (signature) => {
   const vHex = v.toString(16);
   return signature.slice(0, 130) + vHex;
 };
-module.exports.signDaiPermit = async (dai, d2p2Address, signer) => {
+module.exports.signDaiPermit = async (dai, dp2pWrapper, nonce, signer, privateKey) => {
+  
+  const domainSchema = [
+    { name: "name", type: "string" },
+    { name: "version", type: "string" },
+    { name: "chainId", type: "uint256" },
+    { name: "verifyingContract", type: "address" },
+  ];
+  
+  const permitSchema = [
+    { name: "holder", type: "address" },
+    { name: "spender", type: "address" },
+    { name: "nonce", type: "uint256" },
+    { name: "expiry", type: "uint256" },
+    { name: "allowed", type: "bool" },
+  ];
+
   const domainData = {
     name: "Dai Stablecoin",
     version: "1",
@@ -94,15 +98,14 @@ module.exports.signDaiPermit = async (dai, d2p2Address, signer) => {
     verifyingContract: dai.address,
   };
 
-  const nonce = await dai.nonces(signer);
   const message = {
     holder: signer,
-    spender: d2p2Address,
+    spender: dp2pWrapper,
     nonce: nonce,
     expiry: 0,
     allowed: true,
   };
-  const typedData = JSON.stringify({
+  const typedData = {
     types: {
       EIP712Domain: domainSchema,
       Permit: permitSchema,
@@ -110,22 +113,16 @@ module.exports.signDaiPermit = async (dai, d2p2Address, signer) => {
     primaryType: "Permit",
     domain: domainData,
     message,
-  });
-  return web3.currentProvider.sendAsync(
-    {
-      method: "eth_signTypedData_v3",
-      params: [signer, typedData],
-      from: signer,
-    },
-    async function (err, result) {
-      if (err) return console.error(err);
+  };
 
-      console.log("PERSONAL SIGNED:" + JSON.stringify(result.result));
-      const signature = result.result.substring(2);
-      const r = "0x" + signature.substring(0, 64);
-      const s = "0x" + signature.substring(64, 128);
-      const v = parseInt(signature.substring(128, 130), 16);
-      return { r, s, v };
-    }
-  );
+  const msgParams = { data: typedData };
+  
+  const permitSig = sigUtil.signTypedData_v4(privateKey, msgParams).slice(2)
+
+  console.log(permitSig)
+  const r = `0x${permitSig.slice(0, 64)}`;
+  const s = `0x${permitSig.slice(64, 128)}`;
+  const v = parseInt(permitSig.slice(128, 130), 16);
+
+  return { r, s, v };
 };

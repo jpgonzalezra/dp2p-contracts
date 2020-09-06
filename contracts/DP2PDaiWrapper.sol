@@ -10,8 +10,8 @@ contract DP2PDaiWrapper {
     uint256 internal constant MAX_INT = uint256(-1);
 
     constructor(address _dp2pAddress, address _daiAddress) public {
-        require(_dp2pAddress != address(0), "constructor: invalid address");
-        require(_daiAddress != address(0), "constructor: invalid address");
+        require(_dp2pAddress != address(0), "Constructor/invalid-address");
+        require(_daiAddress != address(0), "Constructor/invalid-address");
         dp2pAddress = _dp2pAddress;
         daiAddress = _daiAddress;
     }
@@ -26,12 +26,11 @@ contract DP2PDaiWrapper {
         bytes32 _r,
         bytes32 _s
     ) external returns (bytes32) {
-        require(_token == daiAddress, "createAndDeposit: token-not-dai");
         IDai(daiAddress).permit(
             msg.sender,
             dp2pAddress,
             _nonce,
-            MAX_INT,
+            0,
             true,
             _v,
             _r,

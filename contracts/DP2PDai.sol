@@ -2,25 +2,20 @@
 pragma solidity 0.6.12;
 
 import "./interfaces/IDai.sol";
-import "./interfaces/IDP2P.sol";
+import "./DP2P.sol";
 
-contract DP2PDaiWrapper {
-    address public dp2pAddress;
+contract DP2PDai is DP2P {
     address public daiAddress;
-    uint256 internal constant MAX_INT = uint256(-1);
 
-    constructor(address _dp2pAddress, address _daiAddress) public {
-        require(_dp2pAddress != address(0), "Constructor/invalid-address");
+    constructor(address _daiAddress) public {
         require(_daiAddress != address(0), "Constructor/invalid-address");
-        dp2pAddress = _dp2pAddress;
         daiAddress = _daiAddress;
     }
 
-    function createAndDeposit(
+    function createAndDepositWithPermit(
         uint256 _amount,
         address _agent,
         address _buyer,
-        address _token,
         uint256 _nonce,
         uint8 _v,
         bytes32 _r,
@@ -28,7 +23,7 @@ contract DP2PDaiWrapper {
     ) external returns (bytes32) {
         IDai(daiAddress).permit(
             msg.sender,
-            dp2pAddress,
+            address(this),
             _nonce,
             0,
             true,
@@ -36,12 +31,11 @@ contract DP2PDaiWrapper {
             _r,
             _s
         );
-        return
-            IDP2P(dp2pAddress).createAndDeposit(
+        return createAndDeposit(
                 _amount,
                 _agent,
                 _buyer,
-                _token,
+                daiAddress,
                 _nonce
             );
     }

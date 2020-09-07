@@ -116,10 +116,8 @@ module.exports.signDaiPermit = async (dai, dp2pWrapper, nonce, signer, privateKe
   };
 
   const msgParams = { data: typedData };
-  
   const permitSig = sigUtil.signTypedData_v4(privateKey, msgParams).slice(2)
 
-  console.log(permitSig)
   const r = `0x${permitSig.slice(0, 64)}`;
   const s = `0x${permitSig.slice(64, 128)}`;
   const v = parseInt(permitSig.slice(128, 130), 16);

@@ -127,7 +127,7 @@ contract DP2P is Ownable {
         address _buyer,
         address _token,
         uint256 _salt
-    ) external returns (bytes32 id) {
+    ) public returns (bytes32 id) {
         require(_token != address(0), "createAndDeposit: invalid-address");
         require(
             agentFeeByAgentAddress[_agent] > 0,

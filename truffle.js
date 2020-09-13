@@ -19,6 +19,9 @@ module.exports = {
       network_id: 3, // eslint-disable-line camelcase
     },
   },
+  mocha: {
+    reporter: 'eth-gas-reporter',
+  },
   plugins: ['truffle-plugin-verify'],
   api_keys: { // eslint-disable-line camelcase
     etherscan: process.env.ETHERSCAN_API_KEY,

@@ -28,4 +28,8 @@ contract address:    0xDDf20B47E18f7d016B9db49C1a472B17EbD6a45F
 contract address:    0xd0f231CaB3b8976A00C23863118A223D2ea73ece
 
 ## DP2P
-contract address:    0x3933aD17d8d36375b16Fa9c0730AFc688ba30273
+contract address:    0x7D6913DF92D8e59a690a9a5B0e99e4adFE87D4F1
+https://ropsten.etherscan.io/address/0x7D6913DF92D8e59a690a9a5B0e99e4adFE87D4F1#code
+
+## DP2P DAI
+contract address:    

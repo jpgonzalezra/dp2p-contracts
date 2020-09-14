@@ -50,10 +50,25 @@ contract("DP2P", (accounts) => {
     prevBalanceSeller = await erc20.balanceOf(seller);
     prevBalanceBuyer = await erc20.balanceOf(buyer);
 
-    const escrow = await dp2p.escrows(id);
+    const escrow = await getEscrow(id);
     prevBalEscrow = escrow.balance;
     prevBalTokenEscrow = await erc20.balanceOf(dp2p.address);
     prevPlatformBalance = await dp2p.platformBalanceByToken(erc20.address);
+  };
+
+  const getEscrow = async (id) => {
+    const data = await dp2p.escrows(id);
+    if (data === null) {
+      return {
+        agent: address0x,
+        seller: address0x,
+        buyer: address0x,
+        token: address0x,
+        balance: bn(0),
+        agentFee: bn(0),
+      };
+    }
+    return await dp2p.decodeEscrow(data);
   };
 
   const calcId = (_agent, _seller, _buyer, _fee, _token, _salt) =>
@@ -263,7 +278,7 @@ contract("DP2P", (accounts) => {
         CreateAndDeposit._balance.add(CreateAndDeposit._platformAmount)
       ).to.eq.BN(amount);
 
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
       expect(escrow.balance, toEscrow);
       expect(escrow.agent, agent2);
       expect(escrow.seller, seller);
@@ -330,7 +345,7 @@ contract("DP2P", (accounts) => {
       const toPlatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
 
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
 
       expect(escrow.balance).to.eq.BN(prevBalEscrow.add(toEscrow));
       expect(escrow.agent, agent);
@@ -390,7 +405,7 @@ contract("DP2P", (accounts) => {
       const toEscrow = amount.sub(toPlatform);
       expect(CreateAndDeposit._toPlatform).to.eq.BN(toPlatform);
 
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
       expect(escrow.balance).to.eq.BN(toEscrow);
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
@@ -443,7 +458,7 @@ contract("DP2P", (accounts) => {
       const toPlatform = amount.mul(fee).div(BASE);
       const toEscrow = amount.sub(toPlatform);
 
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
       expect(escrow.balance).to.eq.BN(toEscrow);
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
@@ -472,7 +487,7 @@ contract("DP2P", (accounts) => {
     it("release escrow from seller", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
       const amount = escrow.balance;
       const toAgent = amount.mul(escrow.agentFee).div(BASE);
       const toAmount = amount.sub(toAgent);
@@ -511,7 +526,7 @@ contract("DP2P", (accounts) => {
         prevBalanceBuyer.add(toAmount)
       );
 
-      const escrowAfterRelease = await dp2p.escrows(id);
+      const escrowAfterRelease = await getEscrow(id);
       expect(escrowAfterRelease.balance).to.eq.BN(0);
       expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
         prevBalTokenEscrow.sub(amount)
@@ -577,7 +592,7 @@ contract("DP2P", (accounts) => {
       const id = await createBasicEscrow();
 
       await updateBalances(id);
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
       const amount = escrow.balance;
       const toAgent = amount.mul(escrow.agentFee).div(BASE);
 
@@ -614,7 +629,7 @@ contract("DP2P", (accounts) => {
         prevBalanceBuyer.add(toAmount)
       );
 
-      const escrowAfterRelease = await dp2p.escrows(id);
+      const escrowAfterRelease = await getEscrow(id);
       expect(escrowAfterRelease.balance).to.eq.BN(0);
       expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
         prevBalTokenEscrow.sub(amount)
@@ -680,7 +695,7 @@ contract("DP2P", (accounts) => {
     it("resolveDisputeBuyer from agent", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
       const amount = escrow.balance;
       const toAgent = amount.mul(escrow.agentFee).div(BASE);
       const toAmount = amount.sub(toAgent);
@@ -713,7 +728,7 @@ contract("DP2P", (accounts) => {
         prevBalanceBuyer.add(toAmount)
       );
 
-      const escrowAfterDispute = await dp2p.escrows(id);
+      const escrowAfterDispute = await getEscrow(id);
       expect(escrowAfterDispute.balance).to.eq.BN(prevBalEscrow.sub(amount));
       expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
         prevBalTokenEscrow.sub(amount)
@@ -722,7 +737,7 @@ contract("DP2P", (accounts) => {
     it("resolveDisputeBuyer from owner", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
       const amount = escrow.balance;
 
       const DisputeResolved = await toEvents(
@@ -748,7 +763,7 @@ contract("DP2P", (accounts) => {
         prevBalanceBuyer.add(amount)
       );
 
-      const escrowAfterDispute = await dp2p.escrows(id);
+      const escrowAfterDispute = await getEscrow(id);
       expect(escrowAfterDispute.balance).to.eq.BN(prevBalEscrow.sub(amount));
       expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
         prevBalTokenEscrow.sub(amount)
@@ -782,7 +797,7 @@ contract("DP2P", (accounts) => {
     it("resolveDisputeSeller from agent", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
       const amount = escrow.balance;
       const toAgent = amount.mul(escrow.agentFee).div(BASE);
       const toAmount = amount.sub(toAgent);
@@ -815,7 +830,7 @@ contract("DP2P", (accounts) => {
         prevBalanceSeller.add(toAmount)
       );
 
-      const escrowAfterDispute = await dp2p.escrows(id);
+      const escrowAfterDispute = await getEscrow(id);
       expect(escrowAfterDispute.balance).to.eq.BN(prevBalEscrow.sub(amount));
       expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
         prevBalTokenEscrow.sub(amount)
@@ -824,7 +839,7 @@ contract("DP2P", (accounts) => {
     it("resolveDisputeSeller from owner", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
       const amount = escrow.balance;
 
       const DisputeResolved = await toEvents(
@@ -850,7 +865,7 @@ contract("DP2P", (accounts) => {
         prevBalanceSeller.add(amount)
       );
 
-      const escrowAfterDispute = await dp2p.escrows(id);
+      const escrowAfterDispute = await getEscrow(id);
       expect(escrowAfterDispute.balance).to.eq.BN(prevBalEscrow.sub(amount));
       expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
         prevBalTokenEscrow.sub(amount)
@@ -892,7 +907,7 @@ contract("DP2P", (accounts) => {
       );
       const currentSellerBalance = await erc20.balanceOf(seller);
       const amount = currentSellerBalance.sub(prevSellerBalance);
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
 
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
@@ -942,7 +957,7 @@ contract("DP2P", (accounts) => {
       expect(Cancel._id, id);
       expect(Cancel._amount).to.eq.BN(prevBalEscrow);
 
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
       expect(escrow.agent, address0x);
       expect(escrow.seller, address0x);
       expect(escrow.buyer, address0x);
@@ -972,7 +987,7 @@ contract("DP2P", (accounts) => {
       expect(Cancel._id, id);
       expect(Cancel._amount).to.eq.BN(prevBalEscrow);
 
-      const escrow = await dp2p.escrows(id);
+      const escrow = await getEscrow(id);
       expect(escrow.agent, address0x);
       expect(escrow.seller, address0x);
       expect(escrow.buyer, address0x);

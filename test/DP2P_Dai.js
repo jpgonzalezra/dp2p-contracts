@@ -3,7 +3,7 @@ const DP2PDAI = artifacts.require("DP2PDAI");
 
 const { bn, expect, toEvents, signDaiPermit } = require("./helper/index.js");
 
-contract("DP2P", (accounts) => {
+contract("DP2PDAI", (accounts) => {
   const WEI = bn(web3.utils.toWei("1"));
   const BASE = bn(10000);
   const owner = accounts[1];
@@ -17,6 +17,21 @@ contract("DP2P", (accounts) => {
 
   const mint = async (beneficiary, amount) => {
     await dai.mint(beneficiary, amount, { from: owner });
+  };
+
+  const getEscrow = async (id) => {
+    const data = await dp2pDai.escrows(id);
+    if (data === null) {
+      return {
+        agent: address0x,
+        seller: address0x,
+        buyer: address0x,
+        token: address0x,
+        balance: bn(0),
+        agentFee: bn(0),
+      };
+    }
+    return await dp2pDai.decodeEscrow(data);
   };
 
   const calcId = (_agent, _seller, _buyer, _fee, _token, _salt) =>
@@ -81,7 +96,7 @@ contract("DP2P", (accounts) => {
         CreateAndDeposit._balance.add(CreateAndDeposit._platformAmount)
       ).to.eq.BN(amount);
 
-      const escrow = await dp2pDai.escrows(id);
+      const escrow = await getEscrow(id);
       expect(escrow.balance, toEscrow);
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);

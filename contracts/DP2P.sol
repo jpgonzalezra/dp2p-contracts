@@ -194,7 +194,7 @@ contract DP2P is Ownable {
             "releaseWithSellerSignature: invalid-sender-or-signature"
         );
 
-        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
+        (uint256 toAmount, uint256 agentFee) = _withdraw(
             _id,
             escrow.buyer,
             escrow.balance
@@ -223,7 +223,7 @@ contract DP2P is Ownable {
             "releaseWithAgentSignature: invalid-sender-or-signature"
         );
 
-        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
+        (uint256 toAmount, uint256 agentFee) = _withdraw(
             _id,
             escrow.buyer,
             escrow.balance
@@ -264,22 +264,6 @@ contract DP2P is Ownable {
     }
 
     /**
-        @notice Withdraw an amount from an escrow and the tokens send to seller address
-        @dev the sender should be the buyer of the escrow
-        @param _id escrow id
-    */
-    function buyerCancel(bytes32 _id) external {
-        Escrow memory escrow = escrows[_id];
-        require(msg.sender == escrow.buyer, "buyerCancel: invalid-sender");
-        (uint256 toAmount, uint256 agentFee) = _withdrawWithoutFee(
-            _id,
-            escrow.seller,
-            escrow.balance
-        );
-        emit BuyerCancel(_id, toAmount, agentFee);
-    }
-
-    /**
         @notice cancel an escrow and send the escrow balance to the seller address
         @dev the sender should be the agent
         @dev the escrow will be deleted
@@ -316,11 +300,12 @@ contract DP2P is Ownable {
         bytes calldata _agentSignature
     ) internal {
         require(
-            (msg.sender == _sender && _agent == getSigner(_id, _agentSignature)) ||
+            (msg.sender == _sender &&
+                _agent == getSigner(_id, _agentSignature)) ||
                 msg.sender == _owner,
             "resolveDispute: invalid-sender-or-signature"
         );
-        (uint256 toAmount, uint256 agentFee) = _withdrawWithFee(
+        (uint256 toAmount, uint256 agentFee) = _withdraw(
             _id,
             _sender,
             _balance
@@ -359,22 +344,6 @@ contract DP2P is Ownable {
             );
     }
 
-    function _withdrawWithFee(
-        bytes32 _id,
-        address _to,
-        uint256 _amount
-    ) internal returns (uint256 toAmount, uint256 agentFee) {
-        return _withdraw(_id, _to, _amount, true);
-    }
-
-    function _withdrawWithoutFee(
-        bytes32 _id,
-        address _to,
-        uint256 _amount
-    ) internal returns (uint256 toAmount, uint256 agentFee) {
-        return _withdraw(_id, _to, _amount, false);
-    }
-
     /**
         @notice Withdraw an amount from an escrow and send to _to address
         @dev The sender should be the _approved or the agent of the escrow
@@ -385,8 +354,7 @@ contract DP2P is Ownable {
     function _withdraw(
         bytes32 _id,
         address _to,
-        uint256 _amount,
-        bool _withAgentFee
+        uint256 _amount
     ) internal returns (uint256 toAmount, uint256 agentAmount) {
         Escrow storage escrow = escrows[_id];
         require(escrow.balance > 0, "_withdraw: not-balance");
@@ -394,11 +362,8 @@ contract DP2P is Ownable {
 
         if (msg.sender == _owner) {
             // platform should not pay fee (override withFee to false)
-            _withAgentFee = false;
             toAmount = _amount;
-        }
-
-        if (_withAgentFee) {
+        } else {
             /// calculate the fee
             agentAmount = _feeAmount(_amount, escrow.agentFee);
             /// substract the agent fee

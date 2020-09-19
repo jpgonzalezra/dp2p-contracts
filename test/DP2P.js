@@ -212,12 +212,6 @@ contract("DP2P", (accounts) => {
         "releaseWithSellerSignature: invalid-sender-or-signature"
       );
     });
-    it("withdraw to seller non-escrow", async () => {
-      await tryCatchRevert(
-        () => dp2p.buyerCancel(random32(), { from: agent }),
-        "buyerCancel: invalid-sender"
-      );
-    });
     it("cancel an escrow non-existent", async () => {
       await tryCatchRevert(
         () => dp2p.cancel(random32(), { from: agent }),
@@ -877,57 +871,6 @@ contract("DP2P", (accounts) => {
             from: buyer,
           }),
         "resolveDispute: invalid-sender-or-signature"
-      );
-    });
-  });
-  describe("buyerCancel", () => {
-    it("buyerCancel by the buyer", async () => {
-      const id = await createBasicEscrow();
-      await updateBalances(id);
-
-      const prevSellerBalance = await erc20.balanceOf(seller);
-      const BuyerCancel = await toEvents(
-        dp2p.buyerCancel(id, { from: buyer }),
-        "BuyerCancel"
-      );
-      const currentSellerBalance = await erc20.balanceOf(seller);
-      const amount = currentSellerBalance.sub(prevSellerBalance);
-      const escrow = await dp2p.escrows(id);
-
-      expect(escrow.agent, agent);
-      expect(escrow.seller, seller);
-      expect(escrow.buyer, buyer);
-      expect(BuyerCancel._id, id);
-      expect(BuyerCancel._sender, buyer);
-      expect(BuyerCancel._to, seller);
-      expect(BuyerCancel._toAmount).to.eq.BN(amount);
-      expect(BuyerCancel._toAgent).to.eq.BN(0);
-      expect(await dp2p.platformBalanceByToken(erc20.address)).to.eq.BN(
-        prevPlatformBalance
-      );
-      expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
-      expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
-      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
-      expect(await erc20.balanceOf(seller)).to.eq.BN(
-        prevBalanceSeller.add(amount)
-      );
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
-      expect(escrow.balance).to.eq.BN(prevBalEscrow.sub(amount));
-      expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
-        prevBalTokenEscrow.sub(amount)
-      );
-    });
-    it("buyerCancel without being the buyer", async () => {
-      const id = await createBasicEscrow();
-
-      await tryCatchRevert(
-        () => dp2p.buyerCancel(id, { from: seller }),
-        "buyerCancel: invalid-sender"
-      );
-
-      await tryCatchRevert(
-        () => dp2p.buyerCancel(id, { from: creator }),
-        "buyerCancel: invalid-sender"
       );
     });
   });

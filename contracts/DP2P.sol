@@ -85,6 +85,7 @@ contract DP2P is Ownable {
         for (uint256 i = 0; i < _tokenAddresses.length; i++) {
             address tokenAddress = _tokenAddresses[i];
             uint256 amount = platformBalanceByToken[tokenAddress];
+            if (amount == 0) continue;
             platformBalanceByToken[tokenAddress] = 0;
             require(
                 IERC20(tokenAddress).transfer(_to, amount),

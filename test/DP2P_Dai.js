@@ -8,7 +8,7 @@ contract("DP2P", (accounts) => {
   const BASE = bn(10000);
   const owner = accounts[1];
   const creator = accounts[2];
-  const seller = accounts[3];
+  const seller = "0x30837486478fdA93D06da23A8ab354703648C9c7";
   const buyer = accounts[4];
   const agent = accounts[5];
 
@@ -37,7 +37,7 @@ contract("DP2P", (accounts) => {
     await dp2pDai.setPlatformFee(50, { from: owner });
   });
 
-  describe("Simple flow with DAI permite", () => {
+  describe.skip("Simple flow with DAI permite", () => {
     it("create, deposit with permit", async () => {
       const amount = WEI;
       const nonce = await dai.nonces(seller);
@@ -52,6 +52,7 @@ contract("DP2P", (accounts) => {
 
       await mint(seller, amount);
       const privKey = Buffer.from("1972c66239e8c11c8c76d554d5ae4e1031404572c3b01e8ed6a360dcf480d11d", 'hex');
+      console.log(seller);
       const { v, r, s } = await signDaiPermit(dai, dp2pDai.address, nonce, seller, privKey);
 
       const digest = await dai.getDigest(seller, dp2pDai.address, nonce, 0, true);

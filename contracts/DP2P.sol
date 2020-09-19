@@ -43,6 +43,7 @@ contract DP2P is Ownable {
         uint256 _toAgent
     );
     event Cancel(bytes32 _id, uint256 _amount);
+    event EscrowComplete(bytes32 _id, address _buyer);
 
     /// Platform events
     event SetFee(uint256 _fee);
@@ -245,7 +246,6 @@ contract DP2P is Ownable {
         Escrow memory escrow = escrows[_id];
         resolveDispute(
             _id,
-            escrow.balance,
             escrow.seller,
             escrow.agent,
             _agentSignature
@@ -258,11 +258,17 @@ contract DP2P is Ownable {
         Escrow memory escrow = escrows[_id];
         resolveDispute(
             _id,
-            escrow.balance,
             escrow.buyer,
             escrow.agent,
             _agentSignature
         );
+    }
+
+    function takeOverAsBuyer(bytes32 _id) external {
+        Escrow storage escrow = escrows[_id];
+        require(escrow.buyer == address(0), "takeOverAsBuyer: buyer-exist");
+        escrow.buyer = msg.sender;
+        emit EscrowComplete(_id, escrow.buyer);
     }
 
     /**
@@ -296,7 +302,6 @@ contract DP2P is Ownable {
 
     function resolveDispute(
         bytes32 _id,
-        uint256 _balance,
         address _sender,
         address _agent,
         bytes calldata _agentSignature

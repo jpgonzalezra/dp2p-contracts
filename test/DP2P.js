@@ -511,6 +511,121 @@ contract("DP2P", (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
+    it("release escrow from seller after buyer take over it", async () => {
+      const internalSalt = 1000;
+      await mintAndApproveTokens(seller, WEI);
+      const id = await calcId(
+        agent2,
+        seller,
+        address0x, // buyer
+        500,
+        erc20.address,
+        internalSalt
+      );
+      await dp2p.createAndDeposit(
+        WEI,
+        agent2,
+        address0x, // buyer
+        erc20.address,
+        internalSalt,
+        {
+          from: seller,
+        }
+      );
+      await updateBalances(id);
+
+      let escrow = await dp2p.escrows(id);
+      expect(address0x).equal(escrow.buyer);
+      const amount = escrow.balance;
+      const toAgent = amount.mul(escrow.agentFee).div(BASE);
+      const toAmount = amount.sub(toAgent);
+
+      const EscrowComplete = await toEvents(
+        dp2p.takeOverAsBuyer(id, {
+          from: buyer,
+        }),
+        "EscrowComplete"
+      );
+      escrow = await dp2p.escrows(id);
+      expect(buyer).equal(escrow.buyer);
+      expect(EscrowComplete._id, id);
+      expect(EscrowComplete._buyer, buyer);
+
+      const sellerSignature = fixSignature(await web3.eth.sign(id, seller));
+      const prevBalanceAgent2 = await erc20.balanceOf(agent2)
+      const ReleaseWithSellerSignature = await toEvents(
+        dp2p.releaseWithSellerSignature(id, sellerSignature, {
+          from: buyer,
+        }),
+        "ReleaseWithSellerSignature"
+      );
+
+      expect(ReleaseWithSellerSignature._id, id);
+      expect(ReleaseWithSellerSignature._sender, seller);
+      expect(ReleaseWithSellerSignature._to, buyer);
+
+      expect(ReleaseWithSellerSignature._toAmount).to.eq.BN(toAmount);
+      expect(ReleaseWithSellerSignature._toAgent).to.eq.BN(toAgent);
+
+      expect(escrow.agent, agent);
+      expect(escrow.seller, seller);
+      expect(escrow.buyer, buyer);
+      expect(escrow.agentFee).to.eq.BN(500);
+
+      expect(await dp2p.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
+
+      expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
+      expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
+      expect((await erc20.balanceOf(agent2)).sub(prevBalanceAgent2)).to.eq.BN(toAgent);
+      expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(
+        prevBalanceBuyer.add(toAmount)
+      );
+
+      const escrowAfterRelease = await dp2p.escrows(id);
+      expect(escrowAfterRelease.balance).to.eq.BN(0);
+      expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
+        prevBalTokenEscrow.sub(amount)
+      );
+    });
+    it("revert release incomplete escrow from seller", async () => {
+      const internalSalt = 1001;
+      await mintAndApproveTokens(seller, WEI);
+      const id = await calcId(
+        agent2,
+        seller,
+        address0x, // buyer
+        500,
+        erc20.address,
+        internalSalt
+      );
+      await dp2p.createAndDeposit(
+        WEI,
+        agent2,
+        address0x, // buyer
+        erc20.address,
+        internalSalt,
+        {
+          from: seller,
+        }
+      );
+      await updateBalances(id);
+
+      const escrow = await dp2p.escrows(id);
+      expect(address0x).equal(escrow.buyer);
+
+      const sellerSignature = fixSignature(await web3.eth.sign(id, seller));
+      await tryCatchRevert(
+        () =>
+          dp2p.releaseWithSellerSignature(id, sellerSignature, {
+            from: buyer,
+          }),
+        "releaseWithSellerSignature: invalid-sender-or-signature"
+      );
+    });
+
     it("try to release escrow from buyer with incorrect seller signature", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);

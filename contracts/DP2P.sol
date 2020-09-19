@@ -42,7 +42,6 @@ contract DP2P is Ownable {
         uint256 _toAmount,
         uint256 _toAgent
     );
-    event BuyerCancel(bytes32 _id, uint256 _toAmount, uint256 _toAgent);
     event Cancel(bytes32 _id, uint256 _amount);
 
     /// Platform events

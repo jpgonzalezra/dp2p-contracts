@@ -58,7 +58,6 @@ contract DP2P is Ownable {
         uint256 agentFee;
     }
 
-    uint256 internal constant BASE = 10000;
     uint256 internal constant MAX_PLATFORM_FEE = 100;
     uint256 internal constant MAX_AGENT_FEE = 1000;
     uint256 public platformFee;
@@ -95,8 +94,10 @@ contract DP2P is Ownable {
 
     function newAgent(address _agentAddress, uint256 _fee) external onlyOwner {
         require(_agentAddress != address(0), "newAgent: invalid-address");
-        require(_fee > 0, "newAgent: invalid-fee");
-        require(_fee <= MAX_AGENT_FEE, "newAgent: invalid-agent-fee");
+        require(
+            _fee > 0 && _fee <= MAX_AGENT_FEE,
+            "newAgent: invalid-agent-fee"
+        );
         require(
             agentFeeByAgentAddress[_agentAddress] == 0,
             "newAgent: invalid agent"
@@ -117,8 +118,8 @@ contract DP2P is Ownable {
 
     /**
         @notice deposit an amount in the escrow after creating this
-        @dev create and deposit operation in one transaction,
-             the seller of the escrow should be the sender
+        @dev create and deposit tokens in the escrow,
+             the seller of the escrow must be the sender
         @return id of the escrow
     */
     function createAndDeposit(
@@ -136,8 +137,18 @@ contract DP2P is Ownable {
         address seller = msg.sender;
         // Calculate the escrow id
         uint256 agentFee = agentFeeByAgentAddress[_agent];
+        id = keccak256(
+            abi.encodePacked(
+                address(this),
+                _agent,
+                seller,
+                _buyer,
+                agentFee,
+                _token,
+                _salt
+            )
+        );
 
-        id = _calculateId(_agent, seller, _buyer, agentFee, _token, _salt);
         /// Check if the escrow was created
         require(
             escrows[id].agent == address(0),
@@ -152,7 +163,7 @@ contract DP2P is Ownable {
         );
 
         // Assign the fee amount to platform
-        uint256 platformAmount = _feeAmount(_amount, platformFee);
+        uint256 platformAmount = _amount.fee(platformFee);
         platformBalanceByToken[_token] = platformBalanceByToken[_token].add(
             platformAmount
         );
@@ -193,11 +204,7 @@ contract DP2P is Ownable {
             "releaseWithSellerSignature: invalid-sender-or-signature"
         );
 
-        (uint256 toAmount, uint256 agentFee) = _withdraw(
-            _id,
-            escrow.buyer,
-            escrow.balance
-        );
+        (uint256 toAmount, uint256 agentFee) = _withdraw(_id, escrow.buyer);
         emit ReleaseWithSellerSignature(
             _id,
             escrow.seller,
@@ -222,11 +229,7 @@ contract DP2P is Ownable {
             "releaseWithAgentSignature: invalid-sender-or-signature"
         );
 
-        (uint256 toAmount, uint256 agentFee) = _withdraw(
-            _id,
-            escrow.buyer,
-            escrow.balance
-        );
+        (uint256 toAmount, uint256 agentFee) = _withdraw(_id, escrow.buyer);
         emit ReleaseWithAgentSignature(
             _id,
             escrow.seller,
@@ -304,11 +307,7 @@ contract DP2P is Ownable {
                 msg.sender == _owner,
             "resolveDispute: invalid-sender-or-signature"
         );
-        (uint256 toAmount, uint256 agentFee) = _withdraw(
-            _id,
-            _sender,
-            _balance
-        );
+        (uint256 toAmount, uint256 agentFee) = _withdraw(_id, _sender);
         emit DisputeResolved(_id, _agent, _sender, toAmount, agentFee);
     }
 
@@ -321,53 +320,30 @@ contract DP2P is Ownable {
         return messageHash.recover(_signature);
     }
 
-    function _calculateId(
-        address _agent,
-        address _seller,
-        address _buyer,
-        uint256 _agentFee,
-        address _token,
-        uint256 _salt
-    ) internal view returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked(
-                    address(this),
-                    _agent,
-                    _seller,
-                    _buyer,
-                    _agentFee,
-                    _token,
-                    _salt
-                )
-            );
-    }
-
     /**
         @notice Withdraw an amount from an escrow and send to _to address
         @dev The sender should be the _approved or the agent of the escrow
         @param _id escrow id
         @param _to the address where the tokens will go
-        @param _amount the base amount
     */
-    function _withdraw(
-        bytes32 _id,
-        address _to,
-        uint256 _amount
-    ) internal returns (uint256 toAmount, uint256 agentAmount) {
+    function _withdraw(bytes32 _id, address _to)
+        internal
+        returns (uint256 toAmount, uint256 agentAmount)
+    {
         Escrow storage escrow = escrows[_id];
         require(escrow.balance > 0, "_withdraw: not-balance");
+        uint256 amount = escrow.balance;
         IERC20 token = IERC20(escrow.token);
 
         if (msg.sender == _owner) {
             // platform should not pay fee (override withFee to false)
-            toAmount = _amount;
+            toAmount = amount;
         } else {
             /// calculate the fee
-            agentAmount = _feeAmount(_amount, escrow.agentFee);
+            agentAmount = amount.fee(escrow.agentFee);
             /// substract the agent fee
             escrow.balance = escrow.balance.sub(agentAmount);
-            toAmount = _amount.sub(agentAmount);
+            toAmount = amount.sub(agentAmount);
             /// send fee to the agent
             require(
                 token.transfer(escrow.agent, agentAmount),
@@ -378,19 +354,5 @@ contract DP2P is Ownable {
         escrow.balance = escrow.balance.sub(toAmount);
         /// send amount to `_to` address
         require(token.transfer(_to, toAmount), "_withdraw: error-transfer-to");
-    }
-
-    /**
-        @notice calculate fee amount
-        @param _amount base amount
-        @param _fee escrow agent fee
-        @return calculated fee
-    */
-    function _feeAmount(uint256 _amount, uint256 _fee)
-        internal
-        pure
-        returns (uint256)
-    {
-        return _amount.mul(_fee).div(BASE);
     }
 }

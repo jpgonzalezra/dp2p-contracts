@@ -30,4 +30,13 @@ library SafeMath {
         require(y != 0, "Div by zero");
         return x / y;
     }
+
+    uint256 internal constant BASE = 10000;
+    function fee(uint256 _amount, uint256 _fee)
+        internal
+        pure
+        returns (uint256)
+    {
+        return _amount.mul(_fee).div(BASE);
+    }
 }

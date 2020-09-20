@@ -13,7 +13,7 @@
     "lint": "npm run lint:js && npm run lint:sol",
     "lint:fix": "npm run lint:js:fix && npm run lint:sol:fix",
     "build-contracts": "sol-merger \"./contracts/*.sol\" ./build",
-    "test": "truffle compile && npm run ganache-cli:dev && truffle test --network rpc",
+    "test": "npm run ganache-cli:dev && truffle test --network rpc",
     "ganache-cli:dev": "scripts/ganache-cli.sh --scripts-prepend-node-path"
   },
   "repository": {

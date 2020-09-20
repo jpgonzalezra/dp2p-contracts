@@ -876,14 +876,14 @@ contract("DP2P", (accounts) => {
           dp2p.resolveDisputeBuyer(id, agentSignature, {
             from: agent,
           }),
-        "resolveDispute: invalid-sender-or-signature"
+        "resolveDispute: invalid-sender"
       );
       await tryCatchRevert(
         () =>
           dp2p.resolveDisputeBuyer(id, agentSignature, {
             from: seller,
           }),
-        "resolveDispute: invalid-sender-or-signature"
+        "resolveDispute: invalid-sender"
       );
     });
   });
@@ -978,14 +978,14 @@ contract("DP2P", (accounts) => {
           dp2p.resolveDisputeSeller(id, agentSignature, {
             from: agent,
           }),
-        "resolveDispute: invalid-sender-or-signature"
+        "resolveDispute: invalid-sender"
       );
       await tryCatchRevert(
         () =>
           dp2p.resolveDisputeSeller(id, agentSignature, {
             from: buyer,
           }),
-        "resolveDispute: invalid-sender-or-signature"
+        "resolveDispute: invalid-sender"
       );
     });
   });

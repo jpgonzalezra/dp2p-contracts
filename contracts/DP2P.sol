@@ -46,6 +46,7 @@ contract DP2P is Ownable {
     event EscrowComplete(bytes32 _id, address _buyer);
 
     /// Platform events
+
     event SetFee(uint256 _fee);
     event NewAgent(address _agent, uint256 _fee);
     event RemoveAgent(address _agent);
@@ -67,6 +68,11 @@ contract DP2P is Ownable {
     mapping(address => uint256) public agentFeeByAgentAddress;
     mapping(bytes32 => Escrow) public escrows;
 
+    /**
+        @notice set plataform fee
+        @param _platformFee uint32 of plataform fee.
+        @dev the sender must be owner of this contract
+    */
     function setPlatformFee(uint32 _platformFee) external onlyOwner {
         require(
             _platformFee <= MAX_PLATFORM_FEE,
@@ -76,6 +82,12 @@ contract DP2P is Ownable {
         emit SetFee(_platformFee);
     }
 
+    /**
+        @notice take plataform fee
+        @param _tokenAddresses address of token to do withdraw
+        @param _to address where the tokens will go
+        @dev the sender must be owner of this contract
+    */
     function platformWithdraw(address[] calldata _tokenAddresses, address _to)
         external
         onlyOwner
@@ -93,6 +105,12 @@ contract DP2P is Ownable {
         }
     }
 
+    /**
+        @notice add new agent to operate with the contract
+        @param _agentAddress address of agent
+        @param _fee uint256 of agent price to use it
+        @dev the sender must be owner of this contract
+    */
     function newAgent(address _agentAddress, uint256 _fee) external onlyOwner {
         require(_agentAddress != address(0), "newAgent: invalid-address");
         require(
@@ -107,6 +125,11 @@ contract DP2P is Ownable {
         emit NewAgent(_agentAddress, _fee);
     }
 
+    /**
+        @notice remove agent
+        @param _agentAddress address of agent.
+        @dev the sender must be owner of this contract
+    */
     function removeAgent(address _agentAddress) external onlyOwner {
         require(_agentAddress != address(0), "removeAgent: invalid-address");
         require(
@@ -121,7 +144,12 @@ contract DP2P is Ownable {
         @notice deposit an amount in the escrow after creating this
         @dev create and deposit tokens in the escrow,
              the seller of the escrow must be the sender
-        @return id of the escrow
+        @param _amount uint256 of amount to deposit.
+        @param _agent address of agent.
+        @param _buyer address of buyer.
+        @param _token address of token to operate.
+        @param _salt uint256 value that is generated at random
+        @return id escrow identifier 
     */
     function createAndDeposit(
         uint256 _amount,
@@ -192,6 +220,8 @@ contract DP2P is Ownable {
 
     /**
         @notice relase an amount from an escrow and send the tokens to the buyer address
+        @param _id bytes of escrow id
+        @param _sellerSignature bytes of seller signature after to sign `_id` 
         @dev the sender should be the buyer with the seller signature
     */
     function releaseWithSellerSignature(
@@ -201,11 +231,11 @@ contract DP2P is Ownable {
         Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.buyer &&
-                escrow.seller == getSigner(_id, _sellerSignature),
+                escrow.seller == getSignerRecovered(_id, _sellerSignature),
             "releaseWithSellerSignature: invalid-sender-or-signature"
         );
 
-        (uint256 toAmount, uint256 agentFee) = _withdraw(_id, escrow.buyer);
+        (uint256 toAmount, uint256 agentFee) = _withdraw(_id, escrow.buyer, true);
         emit ReleaseWithSellerSignature(
             _id,
             escrow.seller,
@@ -217,7 +247,9 @@ contract DP2P is Ownable {
 
     /**
         @notice relase an amount from an escrow and send the tokens to the buyer address
-        @dev the sender should be the buyer with the agent signature
+        @param _id bytes of escrow id
+        @param _agentSignature agent signature for _id 
+        @dev the sender must be the buyer and agent signature
     */
     function releaseWithAgentSignature(
         bytes32 _id,
@@ -226,11 +258,11 @@ contract DP2P is Ownable {
         Escrow memory escrow = escrows[_id];
         require(
             msg.sender == escrow.buyer &&
-                escrow.agent == getSigner(_id, _agentSignature),
+                escrow.agent == getSignerRecovered(_id, _agentSignature),
             "releaseWithAgentSignature: invalid-sender-or-signature"
         );
 
-        (uint256 toAmount, uint256 agentFee) = _withdraw(_id, escrow.buyer);
+        (uint256 toAmount, uint256 agentFee) = _withdraw(_id, escrow.buyer, true);
         emit ReleaseWithAgentSignature(
             _id,
             escrow.seller,
@@ -240,30 +272,37 @@ contract DP2P is Ownable {
         );
     }
 
+    /**
+        @notice 
+        @param _id bytes of escrow id
+        @param _agentSignature agent signature for _id 
+        @dev 
+    */
     function resolveDisputeSeller(bytes32 _id, bytes calldata _agentSignature)
         external
     {
         Escrow memory escrow = escrows[_id];
-        resolveDispute(
-            _id,
-            escrow.seller,
-            escrow.agent,
-            _agentSignature
-        );
+        resolveDispute(_id, escrow.seller, escrow.agent, _agentSignature);
     }
 
+    /**
+        @notice 
+        @param _id bytes of escrow id
+        @param _agentSignature agent signature for _id 
+        @dev 
+    */
     function resolveDisputeBuyer(bytes32 _id, bytes calldata _agentSignature)
         external
     {
         Escrow memory escrow = escrows[_id];
-        resolveDispute(
-            _id,
-            escrow.buyer,
-            escrow.agent,
-            _agentSignature
-        );
+        resolveDispute(_id, escrow.buyer, escrow.agent, _agentSignature);
     }
 
+    /**
+        @notice 
+        @param _id bytes of escrow id
+        @dev 
+    */
     function takeOverAsBuyer(bytes32 _id) external {
         Escrow storage escrow = escrows[_id];
         require(escrow.buyer == address(0), "takeOverAsBuyer: buyer-exist");
@@ -273,9 +312,8 @@ contract DP2P is Ownable {
 
     /**
         @notice cancel an escrow and send the escrow balance to the seller address
-        @dev the sender should be the agent
-        @dev the escrow will be deleted
-        @param _id escrow id
+        @param _id bytes32 of escrow id
+        @dev the sender should be the agent or owner, the escrow will be deleted
     */
     function cancel(bytes32 _id) external {
         Escrow memory escrow = escrows[_id];
@@ -285,7 +323,6 @@ contract DP2P is Ownable {
         );
 
         uint256 balance = escrow.balance;
-        address seller = escrow.seller;
         IERC20 token = IERC20(escrow.token);
 
         /// Delete escrow
@@ -293,30 +330,50 @@ contract DP2P is Ownable {
 
         /// transfer tokens to the seller just if the escrow has balance
         if (balance > 0) {
-            require(token.transfer(seller, balance), "cancel: error-transfer");
+            require(
+                token.transfer(escrow.seller, balance),
+                "cancel: error-transfer"
+            );
         }
         emit Cancel(_id, balance);
     }
 
     /// Internal functions
 
+    /**
+        @notice 
+        @param _id bytes32 of escrow id.
+        @param _sender address of sender. 
+        @param _agent address of agent.
+        @param _agentSignature bytes of agent signature.
+        @dev
+    */
     function resolveDispute(
         bytes32 _id,
         address _sender,
         address _agent,
         bytes calldata _agentSignature
     ) internal {
-        require(
-            (msg.sender == _sender &&
-                _agent == getSigner(_id, _agentSignature)) ||
-                msg.sender == _owner,
-            "resolveDispute: invalid-sender-or-signature"
-        );
-        (uint256 toAmount, uint256 agentFee) = _withdraw(_id, _sender);
+        bool owner = msg.sender == _owner;
+        require(msg.sender == _sender || owner, "resolveDispute: invalid-sender");
+        if (!owner) {
+            require(
+                _agent == getSignerRecovered(_id, _agentSignature),
+                "resolveDispute: invalid-signature"
+            );
+        }
+        (uint256 toAmount, uint256 agentFee) = _withdraw(_id, _sender, !owner);
         emit DisputeResolved(_id, _agent, _sender, toAmount, agentFee);
     }
 
-    function getSigner(bytes32 _data, bytes memory _signature)
+    /**
+        @notice get signer recovered with _data and _signature
+        @param _data bytes32 of escrow id.
+        @param _signature bytes of agent signature after to sign the escrow id `_data`
+        @dev 
+        @return address of signer recovered
+    */
+    function getSignerRecovered(bytes32 _data, bytes memory _signature)
         internal
         pure
         returns (address)
@@ -326,12 +383,13 @@ contract DP2P is Ownable {
     }
 
     /**
-        @notice Withdraw an amount from an escrow and send to _to address
-        @dev The sender should be the _approved or the agent of the escrow
-        @param _id escrow id
+        @notice Withdraw an amount from an escrow and send to `_to` address
+        @param _id bytes of escrow id
         @param _to the address where the tokens will go
+        @param _withFee bool of fee
+        @dev The sender should be the _approved or the agent of the escrow
     */
-    function _withdraw(bytes32 _id, address _to)
+    function _withdraw(bytes32 _id, address _to, bool _withFee)
         internal
         returns (uint256 toAmount, uint256 agentAmount)
     {
@@ -340,10 +398,7 @@ contract DP2P is Ownable {
         uint256 amount = escrow.balance;
         IERC20 token = IERC20(escrow.token);
 
-        if (msg.sender == _owner) {
-            // platform should not pay fee (override withFee to false)
-            toAmount = amount;
-        } else {
+        if (_withFee) {
             /// calculate the fee
             agentAmount = amount.fee(escrow.agentFee);
             /// substract the agent fee
@@ -354,7 +409,11 @@ contract DP2P is Ownable {
                 token.transfer(escrow.agent, agentAmount),
                 "_withdraw: error-transfer-agent"
             );
+        } else {
+            // platform should not pay fee (override withFee to false)
+            toAmount = amount;
         }
+
         /// update escrow balance in storage
         escrow.balance = escrow.balance.sub(toAmount);
         /// send amount to `_to` address

@@ -16,6 +16,7 @@ contract DP2PDai is DP2P {
         uint256 _amount,
         address _agent,
         address _buyer,
+        uint8 _limit,
         uint256 _nonce,
         uint8 _v,
         bytes32 _r,
@@ -36,6 +37,7 @@ contract DP2PDai is DP2P {
                 _agent,
                 _buyer,
                 daiAddress,
+                _limit,
                 _nonce
             );
     }

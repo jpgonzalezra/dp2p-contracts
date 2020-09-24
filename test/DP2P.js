@@ -56,14 +56,15 @@ contract("DP2P", (accounts) => {
     prevPlatformBalance = await dp2p.platformBalanceByToken(erc20.address);
   };
 
-  const calcId = (_agent, _seller, _buyer, _fee, _token, _salt) =>
+  const calcId = (_agent, _seller, _buyer, _fee, _token, _limit, _salt) =>
     web3.utils.soliditySha3(
       { t: "address", v: dp2p.address },
       { t: "address", v: _agent },
       { t: "address", v: _seller },
       { t: "address", v: _buyer },
-      { t: "uint256", v: _fee },
+      { t: "uint128", v: _fee },
       { t: "address", v: _token },
+      { t: "uint8", v: _limit },
       { t: "uint256", v: _salt }
     );
 
@@ -76,6 +77,7 @@ contract("DP2P", (accounts) => {
         basicEscrow.agent,
         basicEscrow.buyer,
         basicEscrow.token,
+        0,
         basicEscrow.salt,
         {
           from: seller,
@@ -90,6 +92,7 @@ contract("DP2P", (accounts) => {
       basicEscrow.buyer,
       fee,
       basicEscrow.token,
+      0,
       basicEscrow.salt
     );
     expect(CreateAndDeposit._id, id);
@@ -108,6 +111,7 @@ contract("DP2P", (accounts) => {
       seller,
       buyer,
       token: erc20.address,
+      limit: 0,
       salt,
     };
   });
@@ -230,6 +234,7 @@ contract("DP2P", (accounts) => {
         buyer,
         500,
         erc20.address,
+        0,
         internalSalt
       );
       await updateBalances(id);
@@ -241,6 +246,7 @@ contract("DP2P", (accounts) => {
           agent2,
           buyer,
           erc20.address,
+          0,
           internalSalt,
           {
             from: seller,
@@ -284,7 +290,7 @@ contract("DP2P", (accounts) => {
       const amount = WEI;
       await tryCatchRevert(
         () =>
-          dp2p.createAndDeposit(amount, agent2, buyer, erc20.address, 999, {
+          dp2p.createAndDeposit(amount, agent2, buyer, erc20.address, 0, 999, {
             from: seller,
           }),
         "createAndDeposit: invalid-escrow"
@@ -301,6 +307,7 @@ contract("DP2P", (accounts) => {
         buyer,
         500,
         erc20.address,
+        0,
         internalSalt
       );
       await updateBalances(id);
@@ -311,6 +318,7 @@ contract("DP2P", (accounts) => {
           agent,
           buyer,
           erc20.address,
+          0,
           internalSalt,
           {
             from: seller,
@@ -360,6 +368,7 @@ contract("DP2P", (accounts) => {
         buyer,
         500,
         erc20.address,
+        0,
         internalSalt
       );
       await updateBalances(id);
@@ -370,6 +379,7 @@ contract("DP2P", (accounts) => {
           agent,
           buyer,
           erc20.address,
+          0,
           internalSalt,
           {
             from: seller,
@@ -415,6 +425,7 @@ contract("DP2P", (accounts) => {
         buyer,
         500,
         erc20.address,
+        0,
         internalSalt
       );
       await updateBalances(id);
@@ -425,6 +436,7 @@ contract("DP2P", (accounts) => {
           agent,
           buyer,
           erc20.address,
+          0,
           internalSalt,
           {
             from: seller,
@@ -520,6 +532,7 @@ contract("DP2P", (accounts) => {
         address0x, // buyer
         500,
         erc20.address,
+        0,
         internalSalt
       );
       await dp2p.createAndDeposit(
@@ -527,6 +540,7 @@ contract("DP2P", (accounts) => {
         agent2,
         address0x, // buyer
         erc20.address,
+        0,
         internalSalt,
         {
           from: seller,
@@ -599,6 +613,7 @@ contract("DP2P", (accounts) => {
         address0x, // buyer
         500,
         erc20.address,
+        0,
         internalSalt
       );
       await dp2p.createAndDeposit(
@@ -606,6 +621,7 @@ contract("DP2P", (accounts) => {
         agent2,
         address0x, // buyer
         erc20.address,
+        0,
         internalSalt,
         {
           from: seller,

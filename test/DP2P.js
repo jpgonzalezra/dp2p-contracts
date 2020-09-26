@@ -566,7 +566,7 @@ contract("DP2P", (accounts) => {
       expect(EscrowComplete._buyer, buyer);
 
       const sellerSignature = fixSignature(await web3.eth.sign(id, seller));
-      const prevBalanceAgent2 = await erc20.balanceOf(agent2)
+      const prevBalanceAgent2 = await erc20.balanceOf(agent2);
       const ReleaseWithSellerSignature = await toEvents(
         dp2p.releaseWithSellerSignature(id, sellerSignature, {
           from: buyer,
@@ -592,7 +592,9 @@ contract("DP2P", (accounts) => {
 
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
-      expect((await erc20.balanceOf(agent2)).sub(prevBalanceAgent2)).to.eq.BN(toAgent);
+      expect((await erc20.balanceOf(agent2)).sub(prevBalanceAgent2)).to.eq.BN(
+        toAgent
+      );
       expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
       expect(await erc20.balanceOf(buyer)).to.eq.BN(
         prevBalanceBuyer.add(toAmount)
@@ -1069,10 +1071,91 @@ contract("DP2P", (accounts) => {
     });
     it("cancel without being the agent", async () => {
       const id = await createBasicEscrow();
-
       await tryCatchRevert(
         () => dp2p.cancel(id, { from: seller }),
         "cancel: invalid-sender"
+      );
+    });
+  });
+  describe("cancelBySeller", () => {
+    it.skip("seller cancel an escrow", async () => {
+      
+      const internalSalt = Math.floor(Math.random() * 1000000);
+      const id = await calcId(
+        agent,
+        seller,
+        buyer,
+        500,
+        erc20.address,
+        0,
+        internalSalt
+      );
+
+      await dp2p.createAndDeposit(
+        WEI,
+        agent,
+        buyer,
+        erc20.address,
+        0,
+        internalSalt,
+        {
+          from: seller,
+        }
+      );
+
+      const Cancel = await toEvents(
+        dp2p.cancelBySeller(id, { from: seller }),
+        "Cancel"
+      );
+
+      expect(Cancel._id, id);
+      expect(Cancel._amount).to.eq.BN(prevBalEscrow);
+
+      const escrow = await dp2p.escrows(id);
+      expect(escrow.agent, address0x);
+      expect(escrow.seller, address0x);
+      expect(escrow.buyer, address0x);
+      expect(escrow.agentFee).to.eq.BN(0);
+      expect(await dp2p.platformBalanceByToken(erc20.address)).to.eq.BN(
+        prevPlatformBalance
+      );
+      expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
+      expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
+      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
+      expect(await erc20.balanceOf(seller)).to.eq.BN(
+        prevBalanceSeller.add(prevBalEscrow)
+      );
+      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
+
+      expect(escrow.balance).to.eq.BN(0);
+      expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
+        prevBalTokenEscrow.sub(prevBalEscrow)
+      );
+    });
+    it("revert, the seller want to cancel an escrow in complete state", async () => {
+      const id = await createBasicEscrow();
+      await updateBalances(id);
+      await tryCatchRevert(
+        () => dp2p.cancelBySeller(id, { from: seller }),
+        "cancelBySeller: complete-escrow"
+      );
+    });
+    it("agent, buyer or owner wanto to execute cancelBySeller", async () => {
+      const id = await createBasicEscrow();
+      await updateBalances(id);
+      await tryCatchRevert(
+        () => dp2p.cancelBySeller(id, { from: buyer }),
+        "cancelBySeller: invalid-sender"
+      );
+
+      await tryCatchRevert(
+        () => dp2p.cancelBySeller(id, { from: agent }),
+        "cancelBySeller: invalid-sender"
+      );
+
+      await tryCatchRevert(
+        () => dp2p.cancelBySeller(id, { from: owner }),
+        "cancelBySeller: invalid-sender"
       );
     });
   });

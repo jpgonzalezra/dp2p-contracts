@@ -312,9 +312,9 @@ contract DP2P is Ownable {
     }
 
     /**
-        @notice 
+        @notice the buyer choose an escrow to operate
         @param _id bytes of escrow id
-        @dev 
+        @dev the buyer address must be address(0)
     */
     function takeOverAsBuyer(bytes32 _id) external {
         Escrow storage escrow = escrows[_id];
@@ -334,24 +334,50 @@ contract DP2P is Ownable {
             msg.sender == escrow.agent || msg.sender == _owner,
             "cancel: invalid-sender"
         );
+        _cancel(_id, escrow.token, escrow.balance, escrow.seller);
+    }
 
-        uint256 balance = escrow.balance;
-        IERC20 token = IERC20(escrow.token);
-
-        /// Delete escrow
-        delete escrows[_id];
-
-        /// transfer tokens to the seller just if the escrow has balance
-        if (balance > 0) {
-            require(
-                token.transfer(escrow.seller, balance),
-                "cancel: error-transfer"
-            );
-        }
-        emit Cancel(_id, balance);
+    /**
+        @notice cancel an escrow by seller and send the escrow balance to him address
+        @param _id bytes32 of escrow id
+        @dev 1- the sender must be the seller
+        @dev 2- the buyer escrow must be 0 (open escrow) 
+        @dev 3- the limit time must be gretter than now, so the escrow will be deleted
+    */
+    function cancelBySeller(bytes32 _id) external {
+        Escrow memory escrow = escrows[_id];
+        address seller = escrow.seller;
+        require(msg.sender == seller, "cancelBySeller: invalid-sender");
+        require(escrow.buyer == address(0), "cancelBySeller: complete-escrow");
+        require(escrow.limit > now, "cancelBySeller: invalid-limit-time");
+        _cancel(_id, escrow.token, escrow.balance, seller);
     }
 
     /// Internal functions
+
+    /**
+        @notice generic cancel an escrow
+        @param _id bytes32 of escrow id
+        @param _token address of token
+        @param _balance uint256 of balance to return
+    */
+    function _cancel(
+        bytes32 _id,
+        address _token,
+        uint256 _balance,
+        address _sender
+    ) internal {
+        /// Delete escrow
+        delete escrows[_id];
+        /// transfer tokens to the seller just if the escrow has balance
+        if (_balance > 0) {
+            require(
+                IERC20(_token).transfer(_sender, _balance),
+                "cancel: error-transfer"
+            );
+        }
+        emit Cancel(_id, _balance);
+    }
 
     /**
         @notice 

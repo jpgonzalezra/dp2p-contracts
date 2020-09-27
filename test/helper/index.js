@@ -1,5 +1,5 @@
-const sigUtil = require('eth-sig-util')
-
+const sigUtil = require("eth-sig-util");
+const { promisify } = require('util');
 const BN = web3.utils.BN;
 const expect = require("chai").use(require("bn-chai")(BN)).expect;
 
@@ -74,15 +74,20 @@ module.exports.fixSignature = (signature) => {
   const vHex = v.toString(16);
   return signature.slice(0, 130) + vHex;
 };
-module.exports.signDaiPermit = async (dai, dp2pWrapper, nonce, signer, privateKey) => {
-  
+module.exports.signDaiPermit = async (
+  dai,
+  dp2pWrapper,
+  nonce,
+  signer,
+  privateKey
+) => {
   const domainSchema = [
     { name: "name", type: "string" },
     { name: "version", type: "string" },
     { name: "chainId", type: "uint256" },
     { name: "verifyingContract", type: "address" },
   ];
-  
+
   const permitSchema = [
     { name: "holder", type: "address" },
     { name: "spender", type: "address" },
@@ -116,11 +121,92 @@ module.exports.signDaiPermit = async (dai, dp2pWrapper, nonce, signer, privateKe
   };
 
   const msgParams = { data: typedData };
-  const permitSig = sigUtil.signTypedData_v4(privateKey, msgParams).slice(2)
+  const permitSig = sigUtil.signTypedData_v4(privateKey, msgParams).slice(2);
 
   const r = `0x${permitSig.slice(0, 64)}`;
   const s = `0x${permitSig.slice(64, 128)}`;
   const v = parseInt(permitSig.slice(128, 130), 16);
 
   return { r, s, v };
+};
+
+const advanceBlock = () => {
+  return promisify(web3.currentProvider.send.bind(web3.currentProvider))({
+    jsonrpc: "2.0",
+    method: "evm_mine",
+    id: new Date().getTime(),
+  });
+};
+
+// Returns the time of the last mined block in seconds
+module.exports.latest = async () => {
+  const block = await web3.eth.getBlock("latest");
+  return new BN(block.timestamp);
+};
+
+module.exports.latestBlock = async () => {
+  const block = await web3.eth.getBlock("latest");
+  return new BN(block.number);
+}
+
+// Increases ganache time by the passed duration in seconds
+module.exports.increase = async (duration) => {
+  if (!BN.isBN(duration)) {
+    duration = new BN(duration);
+  }
+
+  if (duration.isNeg())
+    throw Error(`Cannot increase time by a negative amount (${duration})`);
+
+  await promisify(web3.currentProvider.send.bind(web3.currentProvider))({
+    jsonrpc: "2.0",
+    method: "evm_increaseTime",
+    params: [duration.toNumber()],
+    id: new Date().getTime(),
+  });
+
+  await advanceBlock();
+};
+
+/**
+ * Beware that due to the need of calling two separate ganache methods and rpc calls overhead
+ * it's hard to increase time precisely to a target point so design your test to tolerate
+ * small fluctuations from time to time.
+ *
+ * @param target time in seconds
+ */
+module.exports.increaseTo = async(target) => {
+  if (!BN.isBN(target)) {
+    target = new BN(target);
+  }
+
+  const now = await this.latest();
+
+  if (target.lt(now))
+    throw Error(
+      `Cannot increase current time (${now}) to a moment in the past (${target})`
+    );
+  const diff = target.sub(now);
+  return this.increase(diff);
+}
+
+module.exports.duration = {
+  seconds: function (val) {
+    return new BN(val);
+  },
+  minutes: function (val) {
+    return new BN(val).mul(this.seconds("60"));
+  },
+  hours: function (val) {
+    return new BN(val).mul(this.minutes("60"));
+  },
+  days: function (val) {
+    return new BN(val).mul(this.hours("24"));
+  },
+  weeks: function (val) {
+    return new BN(val).mul(this.days("7"));
+  },
+  years: function (val) {
+    return new BN(val).mul(this.days("365"));
+  },
 };

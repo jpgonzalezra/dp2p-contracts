@@ -9,6 +9,10 @@ const {
   address0x,
   maxUint,
   random32,
+  latest,
+  increaseTo,
+  increase,
+  duration,
   fixSignature,
 } = require("./helper/index.js");
 
@@ -64,7 +68,7 @@ contract("DP2P", (accounts) => {
       { t: "address", v: _buyer },
       { t: "uint128", v: _fee },
       { t: "address", v: _token },
-      { t: "uint8", v: _limit },
+      { t: "uint128", v: _limit },
       { t: "uint256", v: _salt }
     );
 
@@ -1078,58 +1082,115 @@ contract("DP2P", (accounts) => {
     });
   });
   describe("cancelBySeller", () => {
-    it.skip("seller cancel an escrow", async () => {
-      
+    it("seller cancel an escrow using cancelBySeller", async () => {
+      const amount = WEI;
+      await mintAndApproveTokens(seller, amount);
+
       const internalSalt = Math.floor(Math.random() * 1000000);
+      const limit = await latest();
+      await increaseTo(limit.add(duration.minutes(10)));
+
       const id = await calcId(
         agent,
         seller,
-        buyer,
+        address0x,
         500,
         erc20.address,
-        0,
+        limit,
         internalSalt
       );
 
       await dp2p.createAndDeposit(
-        WEI,
+        amount,
         agent,
-        buyer,
+        address0x,
         erc20.address,
-        0,
+        limit,
+        internalSalt,
+        {
+          from: seller,
+        }
+      );
+      const Cancel = await toEvents(
+        dp2p.cancelBySeller(id, { from: seller }),
+        "Cancel"
+      );
+      expect(Cancel._id, id);
+
+      const escrow = await dp2p.escrows(id);
+      expect(escrow.agent, address0x);
+      expect(escrow.seller, address0x);
+      expect(escrow.buyer, address0x);
+    });
+    it("revert, seller want to cancel an escrow but out time (limit =! 0)", async () => {
+      const amount = WEI;
+      await mintAndApproveTokens(seller, amount);
+
+      const internalSalt = Math.floor(Math.random() * 1000000);
+
+      const limit = 60 // minutes 
+
+      const id = await calcId(
+        agent,
+        seller,
+        address0x,
+        500,
+        erc20.address,
+        limit,
+        internalSalt
+      );
+
+      await dp2p.createAndDeposit(
+        amount,
+        agent,
+        address0x,
+        erc20.address,
+        limit,
         internalSalt,
         {
           from: seller,
         }
       );
 
-      const Cancel = await toEvents(
-        dp2p.cancelBySeller(id, { from: seller }),
-        "Cancel"
+      await increase(duration.minutes(61));
+
+      await tryCatchRevert(
+        () => dp2p.cancelBySeller(id, { from: seller }),
+        "cancelBySeller: invalid-limit-time"
+      );
+    });
+    it("revert, seller want to cancel an escrow but out time (limit > 0)", async () => {
+      const amount = WEI;
+      await mintAndApproveTokens(seller, amount);
+
+      const internalSalt = Math.floor(Math.random() * 1000000);
+      const limit = 0;
+
+      const id = await calcId(
+        agent,
+        seller,
+        address0x,
+        500,
+        erc20.address,
+        limit,
+        internalSalt
       );
 
-      expect(Cancel._id, id);
-      expect(Cancel._amount).to.eq.BN(prevBalEscrow);
-
-      const escrow = await dp2p.escrows(id);
-      expect(escrow.agent, address0x);
-      expect(escrow.seller, address0x);
-      expect(escrow.buyer, address0x);
-      expect(escrow.agentFee).to.eq.BN(0);
-      expect(await dp2p.platformBalanceByToken(erc20.address)).to.eq.BN(
-        prevPlatformBalance
+      await dp2p.createAndDeposit(
+        amount,
+        agent,
+        address0x,
+        erc20.address,
+        limit,
+        internalSalt,
+        {
+          from: seller,
+        }
       );
-      expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
-      expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
-      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
-      expect(await erc20.balanceOf(seller)).to.eq.BN(
-        prevBalanceSeller.add(prevBalEscrow)
-      );
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
 
-      expect(escrow.balance).to.eq.BN(0);
-      expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
-        prevBalTokenEscrow.sub(prevBalEscrow)
+      await tryCatchRevert(
+        () => dp2p.cancelBySeller(id, { from: seller }),
+        "cancelBySeller: invalid-limit-time"
       );
     });
     it("revert, the seller want to cancel an escrow in complete state", async () => {

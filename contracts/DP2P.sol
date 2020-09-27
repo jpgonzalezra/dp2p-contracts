@@ -149,7 +149,7 @@ contract DP2P is Ownable {
         @param _agent address of agent.
         @param _buyer address of buyer.
         @param _token address of token to operate.
-        @param _limit uint128 of limit in minutes in orden to have an escrow open.
+        @param _limit uint128 of limit in hours in orden to have an escrow open.
         @param _salt uint256 value that is generated at random
         @return id escrow identifier 
     */
@@ -209,7 +209,7 @@ contract DP2P is Ownable {
             agentFee: agentFee,
             token: _token,
             balance: balance,
-            limit: uint128(now + (_limit * 1 minutes))
+            limit: uint128(now + (_limit * 1 hours))
         });
 
         emit CreateAndDeposit(

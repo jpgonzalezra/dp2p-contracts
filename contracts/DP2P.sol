@@ -209,7 +209,7 @@ contract DP2P is Ownable {
             agentFee: agentFee,
             token: _token,
             balance: balance,
-            limit: uint128(now + (_limit * 1 hours))
+            limit: _buyer == address(0) ? uint128(now + (_limit * 1 hours)) : 0
         });
 
         emit CreateAndDeposit(
@@ -314,11 +314,13 @@ contract DP2P is Ownable {
     /**
         @notice the buyer choose an escrow to operate
         @param _id bytes of escrow id
-        @dev the buyer address must be address(0)
+        @dev 1- the buyer address must be address(0)
+        @dev 2- the limit time must be gretter than now, so the escrow will be deleted
     */
     function takeOverAsBuyer(bytes32 _id) external {
         Escrow storage escrow = escrows[_id];
         require(escrow.buyer == address(0), "takeOverAsBuyer: buyer-exist");
+        require(now < escrow.limit, "takeOverAsBuyer: limit-finished");
         escrow.buyer = msg.sender;
         emit EscrowComplete(_id, escrow.buyer);
     }
@@ -349,7 +351,7 @@ contract DP2P is Ownable {
         address seller = escrow.seller;
         require(msg.sender == seller, "cancelBySeller: invalid-sender");
         require(escrow.buyer == address(0), "cancelBySeller: complete-escrow");
-        require(escrow.limit > now, "cancelBySeller: invalid-limit-time");
+        require(now < escrow.limit, "cancelBySeller: invalid-limit-time");
         _cancel(_id, escrow.token, escrow.balance, seller);
     }
 

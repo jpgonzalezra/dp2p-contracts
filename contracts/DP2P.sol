@@ -70,9 +70,10 @@ contract DP2P is Ownable {
     mapping(bytes32 => Escrow) public escrows;
 
     /**
-        @notice set plataform fee
+        @notice set a new plataform fee
         @param _platformFee uint32 of plataform fee.
-        @dev the sender must be owner of this contract
+        @dev 1- the sender must be owner of this contract
+        @dev 2- the _plataformFee must be less than MAX_PLATFORM_FEE
     */
     function setPlatformFee(uint32 _platformFee) external onlyOwner {
         require(
@@ -84,7 +85,7 @@ contract DP2P is Ownable {
     }
 
     /**
-        @notice take plataform fee
+        @notice withdrawn all plataform fee and send it to _to address
         @param _tokenAddresses address of token to do withdraw
         @param _to address where the tokens will go
         @dev the sender must be owner of this contract
@@ -127,7 +128,7 @@ contract DP2P is Ownable {
     }
 
     /**
-        @notice remove agent
+        @notice remove an agent
         @param _agentAddress address of agent.
         @dev the sender must be owner of this contract
     */
@@ -286,7 +287,7 @@ contract DP2P is Ownable {
     }
 
     /**
-        @notice 
+        @notice the agent signed in favor of the seller
         @param _id bytes of escrow id
         @param _agentSignature agent signature for _id 
         @dev 
@@ -299,7 +300,7 @@ contract DP2P is Ownable {
     }
 
     /**
-        @notice 
+        @notice the agent signed in favor of the buyer
         @param _id bytes of escrow id
         @param _agentSignature agent signature for _id 
         @dev 
@@ -362,6 +363,8 @@ contract DP2P is Ownable {
         @param _id bytes32 of escrow id
         @param _token address of token
         @param _balance uint256 of balance to return
+        @dev this method can be execute through agent, owner or 
+        @dev seller only if is a incomplete escrow
     */
     function _cancel(
         bytes32 _id,
@@ -387,7 +390,9 @@ contract DP2P is Ownable {
         @param _sender address of sender. 
         @param _agent address of agent.
         @param _agentSignature bytes of agent signature.
-        @dev
+        @dev 1- must be seller if was called from resolveDisputeSeller or
+        @dev 2- must be buyer if was called from resolveDisputeBuyer or
+        @dev 3- can be plataform to resolve dispute as a last alternative
     */
     function resolveDispute(
         bytes32 _id,

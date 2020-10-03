@@ -10,7 +10,7 @@ contract Ownable is IERC173 {
     modifier onlyOwner() {
         require(
             msg.sender == _owner,
-            "Owneable: The owner should be the sender"
+            "Ownable: The owner should be the sender"
         );
         _;
     }

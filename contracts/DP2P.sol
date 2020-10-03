@@ -58,7 +58,7 @@ contract DP2P is Ownable {
         address token;
         uint256 balance;
         uint128 agentFee;
-        uint128 limit;
+        uint128 frozenTime;
     }
 
     uint256 internal constant MAX_PLATFORM_FEE = 100;
@@ -150,7 +150,7 @@ contract DP2P is Ownable {
         @param _agent address of agent.
         @param _buyer address of buyer.
         @param _token address of token to operate.
-        @param _limit uint128 of limit in hours in orden to have an escrow open.
+        @param _frozenTime uint128 of frozenTime in hours in orden to have an escrow open.
         @param _salt uint256 value that is generated at random
         @return id escrow identifier 
     */
@@ -159,7 +159,7 @@ contract DP2P is Ownable {
         address _agent,
         address _buyer,
         address _token,
-        uint128 _limit,
+        uint128 _frozenTime,
         uint256 _salt
     ) public returns (bytes32 id) {
         require(_token != address(0), "createAndDeposit: invalid-address");
@@ -178,7 +178,7 @@ contract DP2P is Ownable {
                 _buyer,
                 agentFee,
                 _token,
-                _limit,
+                _frozenTime,
                 _salt
             )
         );
@@ -210,7 +210,7 @@ contract DP2P is Ownable {
             agentFee: agentFee,
             token: _token,
             balance: balance,
-            limit: _buyer == address(0) ? uint128(block.timestamp + (_limit * 1 hours)) : 0
+            frozenTime: _buyer == address(0) ? uint128(block.timestamp + (_frozenTime * 1 hours)) : 0
         });
 
         emit CreateAndDeposit(
@@ -316,12 +316,12 @@ contract DP2P is Ownable {
         @notice the buyer choose an escrow to operate
         @param _id bytes of escrow id
         @dev 1- the buyer address must be address(0)
-        @dev 2- the limit time must be gretter than block.timestamp, so the escrow will be deleted
+        @dev 2- the frozenTime time must be gretter than block.timestamp, so the escrow will be deleted
     */
     function takeOverAsBuyer(bytes32 _id) external {
         Escrow storage escrow = escrows[_id];
         require(escrow.buyer == address(0), "takeOverAsBuyer: buyer-exist");
-        require(block.timestamp < escrow.limit, "takeOverAsBuyer: limit-finished");
+        require(block.timestamp < escrow.frozenTime, "takeOverAsBuyer: frozenTime-finished");
         escrow.buyer = msg.sender;
         emit EscrowComplete(_id, escrow.buyer);
     }
@@ -345,14 +345,14 @@ contract DP2P is Ownable {
         @param _id bytes32 of escrow id
         @dev 1- the sender must be the seller
         @dev 2- the buyer escrow must be 0 (open escrow) 
-        @dev 3- the limit time must be gretter than block.timestamp, so the escrow will be deleted
+        @dev 3- the frozen time must be less than current time  
     */
     function cancelBySeller(bytes32 _id) external {
         Escrow memory escrow = escrows[_id];
         address seller = escrow.seller;
         require(msg.sender == seller, "cancelBySeller: invalid-sender");
         require(escrow.buyer == address(0), "cancelBySeller: complete-escrow");
-        require(block.timestamp > escrow.limit, "cancelBySeller: invalid-limit-time");
+        require(block.timestamp > escrow.frozenTime, "cancelBySeller: invalid-frozen-time");
         _cancel(_id, escrow.token, escrow.balance, seller);
     }
 

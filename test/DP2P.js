@@ -58,7 +58,7 @@ contract("DP2P", (accounts) => {
     prevPlatformBalance = await dp2p.platformBalanceByToken(erc20.address);
   };
 
-  const calcId = (_agent, _seller, _buyer, _fee, _token, _limit, _salt) =>
+  const calcId = (_agent, _seller, _buyer, _fee, _token, _frozenTime, _salt) =>
     web3.utils.soliditySha3(
       { t: "address", v: dp2p.address },
       { t: "address", v: _agent },
@@ -66,7 +66,7 @@ contract("DP2P", (accounts) => {
       { t: "address", v: _buyer },
       { t: "uint128", v: _fee },
       { t: "address", v: _token },
-      { t: "uint128", v: _limit },
+      { t: "uint128", v: _frozenTime },
       { t: "uint256", v: _salt }
     );
 
@@ -113,12 +113,12 @@ contract("DP2P", (accounts) => {
       seller,
       buyer,
       token: erc20.address,
-      limit: 0,
+      frozenTime: 0,
       salt,
     };
   });
 
-  describe("setPlataforFee", function () {
+  describe("setPlatformFee", function () {
     it("set 0% platform fee", async () => {
       const fee = bn(0);
       const setFeeEvent = await toEvents(
@@ -156,7 +156,7 @@ contract("DP2P", (accounts) => {
     it("not owner want to set platform fee", async function () {
       await tryCatchRevert(
         () => dp2p.setPlatformFee(0, { from: creator }),
-        "Owneable: The owner should be the sender"
+        "Ownable: The owner should be the sender"
       );
     });
     it("not owner want to withdraw tokens", async function () {
@@ -165,7 +165,7 @@ contract("DP2P", (accounts) => {
           dp2p.platformWithdraw([erc20.address], address0x, {
             from: creator,
           }),
-        "Owneable: The owner should be the sender"
+        "Ownable: The owner should be the sender"
       );
     });
   });
@@ -173,7 +173,7 @@ contract("DP2P", (accounts) => {
     it("platform balance withdraw", async () => {
       const id = await createBasicEscrow();
       const fee = await dp2p.platformFee();
-      const platatormFee = WEI.mul(fee).div(BASE);
+      const platformFee = WEI.mul(fee).div(BASE);
       await updateBalances(id);
 
       await dp2p.platformWithdraw([erc20.address], creator, {
@@ -181,17 +181,17 @@ contract("DP2P", (accounts) => {
       });
 
       expect(await dp2p.platformBalanceByToken(erc20.address)).to.eq.BN(
-        prevPlatformBalance.sub(platatormFee)
+        prevPlatformBalance.sub(platformFee)
       );
       expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
       expect(await erc20.balanceOf(creator)).to.eq.BN(
-        prevBalCreator.add(platatormFee)
+        prevBalCreator.add(platformFee)
       );
       expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
       expect(await erc20.balanceOf(seller)).to.eq.BN(prevBalanceSeller);
       expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
       expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
-        prevBalTokenEscrow.sub(platatormFee)
+        prevBalTokenEscrow.sub(platformFee)
       );
     });
     it("want to withdraw to invalid address", async function () {
@@ -416,7 +416,7 @@ contract("DP2P", (accounts) => {
       expect(escrow.balance).to.eq.BN(prevBalEscrow);
       expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(prevBalTokenEscrow);
     });
-    it("deposit higth amount in an escrow", async () => {
+    it("deposit high amount in an escrow", async () => {
       const amount = maxUint(240);
 
       await mintAndApproveTokens(seller, amount);
@@ -528,14 +528,14 @@ contract("DP2P", (accounts) => {
     it("release escrow from seller after buyer take over it", async () => {
       const internalSalt = 1000;
       await mintAndApproveTokens(seller, WEI);
-      const limit = 2;
+      const frozenTime = 2;
       const id = await calcId(
         agent2,
         seller,
         address0x, // buyer
         500,
         erc20.address,
-        limit,
+        frozenTime,
         internalSalt
       );
       await dp2p.createAndDeposit(
@@ -543,7 +543,7 @@ contract("DP2P", (accounts) => {
         agent2,
         address0x, // buyer
         erc20.address,
-        limit,
+        frozenTime,
         internalSalt,
         {
           from: seller,
@@ -609,17 +609,17 @@ contract("DP2P", (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it("revert, can not execute takeOverAsBuyer because the limit time is over", async () => {
+    it("revert, can not execute takeOverAsBuyer because the frozenTime time is over", async () => {
       const internalSalt = 1000;
       await mintAndApproveTokens(seller, WEI);
-      const limit = 1;
+      const frozenTime = 1;
       const id = await calcId(
         agent,
         seller,
         address0x, // buyer
         500,
         erc20.address,
-        limit,
+        frozenTime,
         internalSalt
       );
       await dp2p.createAndDeposit(
@@ -627,7 +627,7 @@ contract("DP2P", (accounts) => {
         agent,
         address0x, // buyer
         erc20.address,
-        limit,
+        frozenTime,
         internalSalt,
         {
           from: seller,
@@ -644,7 +644,7 @@ contract("DP2P", (accounts) => {
           dp2p.takeOverAsBuyer(id, {
             from: buyer,
           }),
-        "takeOverAsBuyer: limit-finished"
+        "takeOverAsBuyer: frozenTime-finished"
       );
     });
     it("revert release incomplete escrow from seller", async () => {
@@ -690,7 +690,7 @@ contract("DP2P", (accounts) => {
       await updateBalances(id);
 
       const sellerSignature = fixSignature(
-        await web3.eth.sign("incorrect seller signatura", basicEscrow.seller)
+        await web3.eth.sign("incorrect seller signature", basicEscrow.seller)
       );
       await tryCatchRevert(
         () =>
@@ -794,7 +794,7 @@ contract("DP2P", (accounts) => {
       await updateBalances(id);
 
       const agentSignature = fixSignature(
-        await web3.eth.sign("incorrect agent signatura", basicEscrow.agent)
+        await web3.eth.sign("incorrect agent signature", basicEscrow.agent)
       );
       await tryCatchRevert(
         () =>
@@ -1124,7 +1124,7 @@ contract("DP2P", (accounts) => {
       await mintAndApproveTokens(seller, amount);
 
       const internalSalt = Math.floor(Math.random() * 1000000);
-      const limit = 3;
+      const frozenTime = 3;
 
       const id = await calcId(
         agent,
@@ -1132,7 +1132,7 @@ contract("DP2P", (accounts) => {
         address0x,
         500,
         erc20.address,
-        limit,
+        frozenTime,
         internalSalt
       );
 
@@ -1141,30 +1141,55 @@ contract("DP2P", (accounts) => {
         agent,
         address0x,
         erc20.address,
-        limit,
+        frozenTime,
         internalSalt,
         {
           from: seller,
         }
       );
-      const Cancel = await toEvents(
-        dp2p.cancelBySeller(id, { from: seller }),
-        "Cancel"
+      await increase(duration.hours(1));
+
+      await tryCatchRevert(
+        () => dp2p.cancelBySeller(id, { from: seller }),
+        "cancelBySeller: invalid-frozen-time"
       );
-      expect(Cancel._id, id);
+
+      await increase(duration.hours(1));
+
+      await tryCatchRevert(
+        () => dp2p.cancelBySeller(id, { from: seller }),
+        "cancelBySeller: invalid-frozen-time"
+      );
+
+      await increase(duration.minutes(59));
+
+      await tryCatchRevert(
+        () => dp2p.cancelBySeller(id, { from: seller }),
+        "cancelBySeller: invalid-frozen-time"
+      );
+
+      await increase(duration.minutes(1));
+
+      await tryCatchRevert(
+        () => dp2p.cancelBySeller(id, { from: seller }),
+        "cancelBySeller: invalid-frozen-time"
+      );
+
+      await increase(duration.minutes(1));
+      await dp2p.cancelBySeller(id, { from: seller })
 
       const escrow = await dp2p.escrows(id);
       expect(escrow.agent, address0x);
       expect(escrow.seller, address0x);
       expect(escrow.buyer, address0x);
     });
-    it("revert, seller want to cancel an escrow but out time (limit != 0)", async () => {
+    it("revert, seller want to cancel an escrow in freeze time ", async () => {
       const amount = WEI;
       await mintAndApproveTokens(seller, amount);
 
       const internalSalt = Math.floor(Math.random() * 1000000);
 
-      const limit = 1 
+      const frozenTime = 1 
 
       const id = await calcId(
         agent,
@@ -1172,7 +1197,7 @@ contract("DP2P", (accounts) => {
         address0x,
         500,
         erc20.address,
-        limit,
+        frozenTime,
         internalSalt
       );
 
@@ -1181,43 +1206,7 @@ contract("DP2P", (accounts) => {
         agent,
         address0x,
         erc20.address,
-        limit,
-        internalSalt,
-        {
-          from: seller,
-        }
-      );
-
-      await increase(duration.hours(2));
-
-      await tryCatchRevert(
-        () => dp2p.cancelBySeller(id, { from: seller }),
-        "cancelBySeller: invalid-limit-time"
-      );
-    });
-    it("revert, seller want to cancel an escrow but out time (limit > 0)", async () => {
-      const amount = WEI;
-      await mintAndApproveTokens(seller, amount);
-
-      const internalSalt = Math.floor(Math.random() * 1000000);
-      const limit = 0;
-
-      const id = await calcId(
-        agent,
-        seller,
-        address0x,
-        500,
-        erc20.address,
-        limit,
-        internalSalt
-      );
-
-      await dp2p.createAndDeposit(
-        amount,
-        agent,
-        address0x,
-        erc20.address,
-        limit,
+        frozenTime,
         internalSalt,
         {
           from: seller,
@@ -1226,7 +1215,7 @@ contract("DP2P", (accounts) => {
 
       await tryCatchRevert(
         () => dp2p.cancelBySeller(id, { from: seller }),
-        "cancelBySeller: invalid-limit-time"
+        "cancelBySeller: invalid-frozen-time"
       );
     });
     it("revert, the seller want to cancel an escrow in complete state", async () => {
@@ -1237,7 +1226,7 @@ contract("DP2P", (accounts) => {
         "cancelBySeller: complete-escrow"
       );
     });
-    it("agent, buyer or owner wanto to execute cancelBySeller", async () => {
+    it("agent, buyer or owner want to execute cancelBySeller", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
       await tryCatchRevert(
@@ -1275,7 +1264,7 @@ contract("DP2P", (accounts) => {
         "newAgent: invalid-address"
       );
     });
-    it("set a higth agent fee(>10%)", async () => {
+    it("set a high agent fee(>10%)", async () => {
       await tryCatchRevert(
         () => dp2p.newAgent(accounts[9], 1001, { from: owner }),
         "newAgent: invalid-agent-fee"

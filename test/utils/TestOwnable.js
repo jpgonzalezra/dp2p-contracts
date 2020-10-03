@@ -59,7 +59,7 @@ contract('Ownable', function (accounts) {
           secondOwner,
           { from: secondOwner }
         ),
-        'Owneable: The owner should be the sender'
+        'Ownable: The owner should be the sender'
       );
 
       await tryCatchRevert(
@@ -67,7 +67,7 @@ contract('Ownable', function (accounts) {
           thirdOwner,
           { from: secondOwner }
         ),
-        'Owneable: The owner should be the sender'
+        'Ownable: The owner should be the sender'
       );
 
       assert.equal(await ownable.owner(), owner);
@@ -79,7 +79,7 @@ contract('Ownable', function (accounts) {
           secondOwner,
           { from: owner }
         ),
-        'Owneable: The owner should be the sender'
+        'Ownable: The owner should be the sender'
       );
 
       assert.equal(await ownable.owner(), secondOwner);

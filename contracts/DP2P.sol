@@ -352,7 +352,7 @@ contract DP2P is Ownable {
         address seller = escrow.seller;
         require(msg.sender == seller, "cancelBySeller: invalid-sender");
         require(escrow.buyer == address(0), "cancelBySeller: complete-escrow");
-        require(block.timestamp < escrow.limit, "cancelBySeller: invalid-limit-time");
+        require(block.timestamp > escrow.limit, "cancelBySeller: invalid-limit-time");
         _cancel(_id, escrow.token, escrow.balance, seller);
     }
 

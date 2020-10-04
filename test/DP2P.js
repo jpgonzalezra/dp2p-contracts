@@ -1049,37 +1049,6 @@ contract("DP2P", (accounts) => {
     });
   });
   describe("cancel", () => {
-    it("agent cancel an escrow", async () => {
-      const id = await createBasicEscrow();
-
-      await updateBalances(id);
-
-      const Cancel = await toEvents(dp2p.cancel(id, { from: agent }), "Cancel");
-
-      expect(Cancel._id, id);
-      expect(Cancel._amount).to.eq.BN(prevBalEscrow);
-
-      const escrow = await dp2p.escrows(id);
-      expect(escrow.agent, address0x);
-      expect(escrow.seller, address0x);
-      expect(escrow.buyer, address0x);
-      expect(escrow.agentFee).to.eq.BN(0);
-      expect(await dp2p.platformBalanceByToken(erc20.address)).to.eq.BN(
-        prevPlatformBalance
-      );
-      expect(await erc20.balanceOf(owner)).to.eq.BN(prevBalOwner);
-      expect(await erc20.balanceOf(creator)).to.eq.BN(prevBalCreator);
-      expect(await erc20.balanceOf(agent)).to.eq.BN(prevBalAgent);
-      expect(await erc20.balanceOf(seller)).to.eq.BN(
-        prevBalanceSeller.add(prevBalEscrow)
-      );
-      expect(await erc20.balanceOf(buyer)).to.eq.BN(prevBalanceBuyer);
-
-      expect(escrow.balance).to.eq.BN(0);
-      expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
-        prevBalTokenEscrow.sub(prevBalEscrow)
-      );
-    });
     it("platform cancel an escrow", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);

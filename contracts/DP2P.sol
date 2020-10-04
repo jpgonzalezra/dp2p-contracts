@@ -210,7 +210,9 @@ contract DP2P is Ownable {
             agentFee: agentFee,
             token: _token,
             balance: balance,
-            frozenTime: _buyer == address(0) ? uint128(block.timestamp + (_frozenTime * 1 hours)) : 0
+            frozenTime: _buyer == address(0)
+                ? uint128(block.timestamp + (_frozenTime * 1 hours))
+                : 0
         });
 
         emit CreateAndDeposit(
@@ -321,7 +323,10 @@ contract DP2P is Ownable {
     function takeOverAsBuyer(bytes32 _id) external {
         Escrow storage escrow = escrows[_id];
         require(escrow.buyer == address(0), "takeOverAsBuyer: buyer-exist");
-        require(block.timestamp < escrow.frozenTime, "takeOverAsBuyer: frozenTime-finished");
+        require(
+            block.timestamp < escrow.frozenTime,
+            "takeOverAsBuyer: frozenTime-finished"
+        );
         escrow.buyer = msg.sender;
         emit EscrowComplete(_id, escrow.buyer);
     }
@@ -329,14 +334,11 @@ contract DP2P is Ownable {
     /**
         @notice cancel an escrow and send the escrow balance to the seller address
         @param _id bytes32 of escrow id
-        @dev the sender should be the agent or owner, the escrow will be deleted
+        @dev the sender must be owner, the escrow will be deleted
     */
     function cancel(bytes32 _id) external {
         Escrow memory escrow = escrows[_id];
-        require(
-            msg.sender == escrow.agent || msg.sender == _owner,
-            "cancel: invalid-sender"
-        );
+        require(msg.sender == _owner, "cancel: invalid-sender");
         _cancel(_id, escrow.token, escrow.balance, escrow.seller);
     }
 
@@ -352,7 +354,10 @@ contract DP2P is Ownable {
         address seller = escrow.seller;
         require(msg.sender == seller, "cancelBySeller: invalid-sender");
         require(escrow.buyer == address(0), "cancelBySeller: complete-escrow");
-        require(block.timestamp > escrow.frozenTime, "cancelBySeller: invalid-frozen-time");
+        require(
+            block.timestamp > escrow.frozenTime,
+            "cancelBySeller: invalid-frozen-time"
+        );
         _cancel(_id, escrow.token, escrow.balance, seller);
     }
 

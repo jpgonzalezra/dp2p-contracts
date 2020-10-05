@@ -258,41 +258,10 @@ contract DP2P is Ownable {
     }
 
     /**
-        @notice relase an amount from an escrow and send the tokens to the buyer address
+        @notice the seller must call this method to withdraw they tokens if the agent decided to their favor
         @param _id bytes of escrow id
         @param _agentSignature agent signature for _id 
-        @dev the sender must be the buyer and agent signature
-    */
-    function releaseWithAgentSignature(
-        bytes32 _id,
-        bytes calldata _agentSignature
-    ) external {
-        Escrow memory escrow = escrows[_id];
-        require(
-            msg.sender == escrow.buyer &&
-                escrow.agent == getSignerRecovered(_id, _agentSignature),
-            "releaseWithAgentSignature: invalid-sender-or-signature"
-        );
-
-        (uint256 toAmount, uint256 agentFee) = _withdraw(
-            _id,
-            escrow.buyer,
-            true
-        );
-        emit ReleaseWithAgentSignature(
-            _id,
-            escrow.seller,
-            escrow.buyer,
-            toAmount,
-            agentFee
-        );
-    }
-
-    /**
-        @notice the agent signed in favor of the seller
-        @param _id bytes of escrow id
-        @param _agentSignature agent signature for _id 
-        @dev 
+        @dev the seller must be the sender 
     */
     function resolveDisputeSeller(bytes32 _id, bytes calldata _agentSignature)
         external
@@ -302,10 +271,10 @@ contract DP2P is Ownable {
     }
 
     /**
-        @notice the agent signed in favor of the buyer
+        @notice the buyer must call this method to withdraw they tokens if the agent decided to their favor
         @param _id bytes of escrow id
         @param _agentSignature agent signature for _id 
-        @dev 
+        @dev the buyer must be the sender
     */
     function resolveDisputeBuyer(bytes32 _id, bytes calldata _agentSignature)
         external

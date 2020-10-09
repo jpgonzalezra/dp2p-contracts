@@ -10,7 +10,7 @@ contract DP2P is Ownable {
     using SafeMath for uint256;
     using ECDSA for bytes32;
 
-    /// User Events
+    // User Events
 
     event CreateAndDeposit(
         bytes32 _id,
@@ -45,7 +45,7 @@ contract DP2P is Ownable {
     event Cancel(bytes32 _id, uint256 _amount);
     event EscrowComplete(bytes32 _id, address _buyer);
 
-    /// Platform events
+    // Platform events
 
     event SetFee(uint256 _fee);
     event NewAgent(address _agent, uint256 _fee);
@@ -185,7 +185,7 @@ contract DP2P is Ownable {
             )
         );
 
-        /// Check if the escrow was created
+        // Check if the escrow was created
         require(
             escrows[id].agent == address(0),
             "createAndDeposit: invalid-escrow"
@@ -212,9 +212,9 @@ contract DP2P is Ownable {
             agentFee: agentFee,
             token: _token,
             balance: balance,
-            frozenTime: _buyer == address(0)
+            frozenTime: _buyer == address(0) // frozenTime not apply when there is a buyer assigned
                 ? uint128(block.timestamp + (_frozenTime * 1 hours))
-                : 0
+                : 0 // buyer assigned
         });
 
         emit CreateAndDeposit(
@@ -332,7 +332,7 @@ contract DP2P is Ownable {
         _cancel(_id, escrow.token, escrow.balance, seller);
     }
 
-    /// Internal functions
+    // Internal functions
 
     /**
         @notice generic cancel an escrow
@@ -348,9 +348,9 @@ contract DP2P is Ownable {
         uint256 _balance,
         address _sender
     ) internal {
-        /// Delete escrow
+        // Delete escrow
         delete escrows[_id];
-        /// transfer tokens to the seller just if the escrow has balance
+        // transfer tokens to the seller just if the escrow has balance
         if (_balance > 0) {
             require(
                 IERC20(_token).transfer(_sender, _balance),
@@ -425,12 +425,12 @@ contract DP2P is Ownable {
         IERC20 token = IERC20(escrow.token);
 
         if (_withFee) {
-            /// calculate the fee
+            // calculate the fee
             agentAmount = amount.fee(escrow.agentFee);
-            /// substract the agent fee
+            // substract the agent fee
             escrow.balance = escrow.balance.sub(agentAmount);
             toAmount = amount.sub(agentAmount);
-            /// send fee to the agent
+            // send fee to the agent
             require(
                 token.transfer(escrow.agent, agentAmount),
                 "_withdraw: error-transfer-agent"
@@ -440,9 +440,9 @@ contract DP2P is Ownable {
             toAmount = amount;
         }
 
-        /// update escrow balance in storage
+        // update escrow balance in storage
         escrow.balance = escrow.balance.sub(toAmount);
-        /// send amount to `_to` address
+        // send amount to `_to` address
         require(token.transfer(_to, toAmount), "_withdraw: error-transfer-to");
     }
 }

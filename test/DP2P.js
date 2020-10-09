@@ -475,6 +475,48 @@ contract("DP2P", (accounts) => {
         prevBalTokenEscrow.add(amount)
       );
     });
+    it("revert, the seller and the buyer have the same address", async () => {
+      const amount = WEI;
+      await mintAndApproveTokens(seller, amount);
+
+      const internalSalt = Math.floor(Math.random() * 1000000);
+      
+      const invalidBuyer = seller;
+      await tryCatchRevert(
+        () => dp2p.createAndDeposit(
+          amount,
+          agent,
+          invalidBuyer,
+          erc20.address,
+          0,
+          internalSalt,
+          {
+            from: seller,
+          }
+        ),
+        "createAndDeposit: invalid-buyer-seller"
+      );
+
+      const invalidSeller = buyer
+      await tryCatchRevert(
+        () => dp2p.createAndDeposit(
+          amount,
+          agent,
+          buyer,
+          erc20.address,
+          0,
+          internalSalt,
+          {
+            from: invalidSeller,
+          }
+        ),
+        "createAndDeposit: invalid-buyer-seller"
+      );
+    });
+    it("revert, the agent can not be as seller or buyer in the escrow", async () => {
+     
+    });
+    
   });
   describe("releaseWithSellerSignature", () => {
     it("release escrow from seller", async () => {
@@ -1048,6 +1090,7 @@ contract("DP2P", (accounts) => {
       expect(escrow.seller, address0x);
       expect(escrow.buyer, address0x);
     });
+    
     it("revert, seller want to cancel an escrow in freeze time ", async () => {
       const amount = WEI;
       await mintAndApproveTokens(seller, amount);
@@ -1083,6 +1126,7 @@ contract("DP2P", (accounts) => {
         "cancelBySeller: invalid-frozen-time"
       );
     });
+  
     it("revert, the seller want to cancel an escrow in complete state", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);

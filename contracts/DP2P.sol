@@ -163,11 +163,13 @@ contract DP2P is Ownable {
         uint256 _salt
     ) public returns (bytes32 id) {
         require(_token != address(0), "createAndDeposit: invalid-address");
+        address seller = msg.sender;
+        require(seller != _buyer, "createAndDeposit: invalid-buyer-seller");
+        // invalid-buyer-agent-seller
         require(
             agentFeeByAgentAddress[_agent] > 0,
             "createAndDeposit: invalid-agent"
         );
-        address seller = msg.sender;
         // Calculate the escrow id
         uint128 agentFee = uint128(agentFeeByAgentAddress[_agent]);
         id = keccak256(

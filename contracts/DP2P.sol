@@ -7,6 +7,7 @@ import "./utils/Ownable.sol";
 import "./utils/SafeMath.sol";
 
 contract DP2P is Ownable {
+    
     using SafeMath for uint256;
     using ECDSA for bytes32;
 
@@ -22,13 +23,6 @@ contract DP2P is Ownable {
         address _token
     );
     event ReleaseWithSellerSignature(
-        bytes32 _id,
-        address _sender,
-        address _to,
-        uint256 _toAmount,
-        uint256 _toAgent
-    );
-    event ReleaseWithAgentSignature(
         bytes32 _id,
         address _sender,
         address _to,
@@ -60,9 +54,11 @@ contract DP2P is Ownable {
         uint128 agentFee;
         uint128 frozenTime;
     }
-
-    uint256 internal constant MAX_PLATFORM_FEE = 100;
-    uint256 internal constant MAX_AGENT_FEE = 1000;
+    // 10000 -> 100%
+    // 1000  -> 10%
+    // 100   -> 1%
+    uint256 internal constant MAX_PLATFORM_FEE = 100; 
+    uint256 internal constant MAX_AGENT_FEE = 1000; // 10%
     uint256 public platformFee;
 
     mapping(address => uint256) public platformBalanceByToken;

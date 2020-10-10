@@ -165,7 +165,10 @@ contract DP2P is Ownable {
         require(_token != address(0), "createAndDeposit: invalid-address");
         address seller = msg.sender;
         require(seller != _buyer, "createAndDeposit: invalid-buyer-seller");
-        require(_agent != _buyer && _agent != seller, "createAndDeposit: invalid-buyer-agent-seller");
+        require(
+            _agent != _buyer && _agent != seller,
+            "createAndDeposit: invalid-buyer-agent-seller"
+        );
         require(
             agentFeeByAgentAddress[_agent] > 0,
             "createAndDeposit: invalid-agent"
@@ -261,28 +264,52 @@ contract DP2P is Ownable {
 
     /**
         @notice the seller must call this method to withdraw they tokens if the agent decided to their favor
-        @param _id bytes of escrow id
+        @param _data bytes of escrow id
         @param _agentSignature agent signature for _id 
         @dev the seller must be the sender 
     */
-    function resolveDisputeSeller(bytes32 _id, bytes calldata _agentSignature)
-        external
-    {
-        Escrow memory escrow = escrows[_id];
-        resolveDispute(_id, escrow.seller, escrow.agent, _agentSignature);
+    function resolveDisputeSeller(
+        bytes calldata _data,
+        bytes calldata _agentSignature
+    ) external {
+        (bytes32 id, address ownerSignature) = abi.decode(
+            _data,
+            (bytes32, address)
+        );
+        Escrow memory escrow = escrows[id];
+        resolveDispute(
+            id,
+            escrow.seller,
+            escrow.agent,
+            ownerSignature,
+            _data,
+            _agentSignature
+        );
     }
 
     /**
         @notice the buyer must call this method to withdraw they tokens if the agent decided to their favor
-        @param _id bytes of escrow id
+        @param _data bytes of escrow id
         @param _agentSignature agent signature for _id 
         @dev the buyer must be the sender
     */
-    function resolveDisputeBuyer(bytes32 _id, bytes calldata _agentSignature)
-        external
-    {
-        Escrow memory escrow = escrows[_id];
-        resolveDispute(_id, escrow.buyer, escrow.agent, _agentSignature);
+    function resolveDisputeBuyer(
+        bytes calldata _data,
+        bytes calldata _agentSignature
+    ) external {
+        (bytes32 id, address ownerSignature) = abi.decode(
+            _data,
+            (bytes32, address)
+        );
+        Escrow memory escrow = escrows[id];
+        resolveDispute(
+            id,
+            escrow.buyer,
+            escrow.agent,
+            ownerSignature,
+            _data,
+            _agentSignature
+        );
     }
 
     /**
@@ -374,16 +401,21 @@ contract DP2P is Ownable {
         bytes32 _id,
         address _sender,
         address _agent,
+        address _ownerSignature,
+        bytes calldata _data,
         bytes calldata _agentSignature
     ) internal {
-        bool owner = msg.sender == _owner;
-        require(
-            msg.sender == _sender || owner,
-            "resolveDispute: invalid-sender"
-        );
+        address sender = msg.sender;
+        bool owner = sender == _owner;
+        require(sender == _sender || owner, "resolveDispute: invalid-sender");
         if (!owner) {
             require(
-                _agent == getSignerRecovered(_id, _agentSignature),
+                _agent ==
+                    getSignerRecovered(
+                        keccak256(_data),
+                        _agentSignature
+                    ) &&
+                    sender == _ownerSignature,
                 "resolveDispute: invalid-signature"
             );
         }

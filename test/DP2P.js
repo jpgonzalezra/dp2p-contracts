@@ -480,91 +480,95 @@ contract("DP2P", (accounts) => {
       await mintAndApproveTokens(seller, amount);
 
       const internalSalt = Math.floor(Math.random() * 1000000);
-      
+
       const invalidBuyer = seller;
       await tryCatchRevert(
-        () => dp2p.createAndDeposit(
-          amount,
-          agent,
-          invalidBuyer,
-          erc20.address,
-          0,
-          internalSalt,
-          {
-            from: seller,
-          }
-        ),
+        () =>
+          dp2p.createAndDeposit(
+            amount,
+            agent,
+            invalidBuyer,
+            erc20.address,
+            0,
+            internalSalt,
+            {
+              from: seller,
+            }
+          ),
         "createAndDeposit: invalid-buyer-seller"
       );
 
-      const invalidSeller = buyer
+      const invalidSeller = buyer;
       await tryCatchRevert(
-        () => dp2p.createAndDeposit(
-          amount,
-          agent,
-          buyer,
-          erc20.address,
-          0,
-          internalSalt,
-          {
-            from: invalidSeller,
-          }
-        ),
+        () =>
+          dp2p.createAndDeposit(
+            amount,
+            agent,
+            buyer,
+            erc20.address,
+            0,
+            internalSalt,
+            {
+              from: invalidSeller,
+            }
+          ),
         "createAndDeposit: invalid-buyer-seller"
       );
     });
-    it.only("revert, the agent can not be as seller or buyer in the escrow", async () => {
+    it("revert, the agent can not be as seller or buyer in the escrow", async () => {
       const amount = WEI;
       await mintAndApproveTokens(seller, amount);
 
       const internalSalt = Math.floor(Math.random() * 1000000);
-      
+
       await tryCatchRevert(
-        () => dp2p.createAndDeposit(
-          amount,
-          agent,
-          agent,
-          erc20.address,
-          0,
-          internalSalt,
-          {
-            from: seller,
-          }
-        ),
+        () =>
+          dp2p.createAndDeposit(
+            amount,
+            agent,
+            agent,
+            erc20.address,
+            0,
+            internalSalt,
+            {
+              from: seller,
+            }
+          ),
         "createAndDeposit: invalid-buyer-agent-seller"
       );
 
       await tryCatchRevert(
-        () => dp2p.createAndDeposit(
-          amount,
-          agent,
-          buyer,
-          erc20.address,
-          0,
-          internalSalt,
-          {
-            from: agent,
-          }
-        ),
+        () =>
+          dp2p.createAndDeposit(
+            amount,
+            agent,
+            buyer,
+            erc20.address,
+            0,
+            internalSalt,
+            {
+              from: agent,
+            }
+          ),
         "createAndDeposit: invalid-buyer-agent-seller"
       );
 
       await tryCatchRevert(
-        () => dp2p.createAndDeposit(
-          amount,
-          agent,
-          agent,
-          erc20.address,
-          0,
-          internalSalt,
-          {
-            from: agent,
-          }
-        ),
+        () =>
+          dp2p.createAndDeposit(
+            amount,
+            agent,
+            agent,
+            erc20.address,
+            0,
+            internalSalt,
+            {
+              from: agent,
+            }
+          ),
         "createAndDeposit: invalid-buyer-seller"
       );
     });
-    
   });
   describe("releaseWithSellerSignature", () => {
     it("release escrow from seller", async () => {
@@ -774,7 +778,6 @@ contract("DP2P", (accounts) => {
         "releaseWithSellerSignature: invalid-sender-or-signature"
       );
     });
-
     it("try to release escrow from buyer with incorrect seller signature", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
@@ -839,11 +842,17 @@ contract("DP2P", (accounts) => {
       const toAgent = amount.mul(escrow.agentFee).div(BASE);
       const toAmount = amount.sub(toAgent);
 
-      const agentSignature = fixSignature(
-        await web3.eth.sign(id, basicEscrow.agent)
+      const data = web3.eth.abi.encodeParameters(
+        ["bytes32", "address"],
+        [id, buyer]
       );
+
+      const agentSignature = fixSignature(
+        await web3.eth.sign(web3.utils.soliditySha3(data), basicEscrow.agent)
+      );
+
       const DisputeResolved = await toEvents(
-        dp2p.resolveDisputeBuyer(id, agentSignature, { from: buyer }),
+        dp2p.resolveDisputeBuyer(data, agentSignature, { from: buyer }),
         "DisputeResolved"
       );
 
@@ -871,6 +880,20 @@ contract("DP2P", (accounts) => {
       expect(escrowAfterDispute.balance).to.eq.BN(prevBalEscrow.sub(amount));
       expect(await erc20.balanceOf(dp2p.address)).to.eq.BN(
         prevBalTokenEscrow.sub(amount)
+      );
+    });
+    it("resolveDisputeBuyer from agent but the signature was for the seller", async () => {
+      const id = await createBasicEscrow();
+      const data = web3.eth.abi.encodeParameters(
+        ["bytes32", "address"],
+        [id, seller]
+      );
+      const agentSignature = fixSignature(
+        await web3.eth.sign(web3.utils.soliditySha3(data), basicEscrow.agent)
+      );
+      await tryCatchRevert(
+        () => dp2p.resolveDisputeBuyer(data, agentSignature, { from: buyer }),
+        "resolveDispute: invalid-signature"
       );
     });
     it("resolveDisputeBuyer from owner", async () => {
@@ -941,11 +964,17 @@ contract("DP2P", (accounts) => {
       const toAgent = amount.mul(escrow.agentFee).div(BASE);
       const toAmount = amount.sub(toAgent);
 
-      const agentSignature = fixSignature(
-        await web3.eth.sign(id, basicEscrow.agent)
+      const data = web3.eth.abi.encodeParameters(
+        ["bytes32", "address"],
+        [id, seller]
       );
+
+      const agentSignature = fixSignature(
+        await web3.eth.sign(web3.utils.soliditySha3(data), basicEscrow.agent)
+      );
+
       const DisputeResolved = await toEvents(
-        dp2p.resolveDisputeSeller(id, agentSignature, { from: seller }),
+        dp2p.resolveDisputeSeller(data, agentSignature, { from: seller }),
         "DisputeResolved"
       );
 
@@ -975,6 +1004,23 @@ contract("DP2P", (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
+    it("resolveDisputeSeller from agent but the signature was for the buyer", async () => {
+      const id = await createBasicEscrow();
+
+      const data = web3.eth.abi.encodeParameters(
+        ["bytes32", "address"],
+        [id, buyer]
+      );
+
+      const agentSignature = fixSignature(
+        await web3.eth.sign(web3.utils.soliditySha3(data), basicEscrow.agent)
+      );
+
+      await tryCatchRevert(
+        () => dp2p.resolveDisputeSeller(data, agentSignature, { from: seller }),
+        "resolveDispute: invalid-signature"
+      );
+    });  
     it("resolveDisputeSeller from owner", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
@@ -1131,21 +1177,21 @@ contract("DP2P", (accounts) => {
       );
 
       await increase(duration.minutes(1));
-      await dp2p.cancelBySeller(id, { from: seller })
+      await dp2p.cancelBySeller(id, { from: seller });
 
       const escrow = await dp2p.escrows(id);
       expect(escrow.agent, address0x);
       expect(escrow.seller, address0x);
       expect(escrow.buyer, address0x);
     });
-    
+
     it("revert, seller want to cancel an escrow in freeze time ", async () => {
       const amount = WEI;
       await mintAndApproveTokens(seller, amount);
 
       const internalSalt = Math.floor(Math.random() * 1000000);
 
-      const frozenTime = 1 
+      const frozenTime = 1;
 
       const id = await calcId(
         agent,
@@ -1174,7 +1220,7 @@ contract("DP2P", (accounts) => {
         "cancelBySeller: invalid-frozen-time"
       );
     });
-  
+
     it("revert, the seller want to cancel an escrow in complete state", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);

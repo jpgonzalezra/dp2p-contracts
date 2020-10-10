@@ -513,8 +513,56 @@ contract("DP2P", (accounts) => {
         "createAndDeposit: invalid-buyer-seller"
       );
     });
-    it("revert, the agent can not be as seller or buyer in the escrow", async () => {
-     
+    it.only("revert, the agent can not be as seller or buyer in the escrow", async () => {
+      const amount = WEI;
+      await mintAndApproveTokens(seller, amount);
+
+      const internalSalt = Math.floor(Math.random() * 1000000);
+      
+      await tryCatchRevert(
+        () => dp2p.createAndDeposit(
+          amount,
+          agent,
+          agent,
+          erc20.address,
+          0,
+          internalSalt,
+          {
+            from: seller,
+          }
+        ),
+        "createAndDeposit: invalid-buyer-agent-seller"
+      );
+
+      await tryCatchRevert(
+        () => dp2p.createAndDeposit(
+          amount,
+          agent,
+          buyer,
+          erc20.address,
+          0,
+          internalSalt,
+          {
+            from: agent,
+          }
+        ),
+        "createAndDeposit: invalid-buyer-agent-seller"
+      );
+
+      await tryCatchRevert(
+        () => dp2p.createAndDeposit(
+          amount,
+          agent,
+          agent,
+          erc20.address,
+          0,
+          internalSalt,
+          {
+            from: agent,
+          }
+        ),
+        "createAndDeposit: invalid-buyer-seller"
+      );
     });
     
   });

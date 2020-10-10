@@ -165,7 +165,7 @@ contract DP2P is Ownable {
         require(_token != address(0), "createAndDeposit: invalid-address");
         address seller = msg.sender;
         require(seller != _buyer, "createAndDeposit: invalid-buyer-seller");
-        // invalid-buyer-agent-seller
+        require(_agent != _buyer && _agent != seller, "createAndDeposit: invalid-buyer-agent-seller");
         require(
             agentFeeByAgentAddress[_agent] > 0,
             "createAndDeposit: invalid-agent"

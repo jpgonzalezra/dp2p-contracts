@@ -140,13 +140,21 @@ contract DP2P is Ownable {
 
     /**
         @notice Creates an Escrow and deposits an amount to it.
+        Escrows can be created without a specific buyer address. In this 
+        case the sender must specify the minimum amount of hours that the created escrow
+        will remain available for the given buyer by using the '_frozenTime' 
+        parameter. The escrow creator won't have the ability to retreat the escrow
+        and claim its funds. Once this time window of '_frozenTime' hours has passed
+        the creator of the escrow will have the option to cancel it if needed.
         @dev creates and deposits tokens to the escrow,
              Sender must be the selling part of the escrow 
         @param _amount uint256 of amount to deposit.
         @param _agent address of agent.
         @param _buyer address of buyer.
         @param _token address of token to operate.
-        @param _frozenTime uint128 number of hours that the Escrow will remain open
+        @param _frozenTime uint128 minimum number of hours that the Escrow
+        will remain available for prospective buyers before its creator 
+        can opt to cancel it.  
         @param _salt uint256 randomly generated salt.
         @return id escrow identifier 
     */
@@ -211,7 +219,7 @@ contract DP2P is Ownable {
             agentFee: agentFee,
             token: _token,
             balance: balance,
-            frozenTime: _buyer == address(0) // frozenTime not apply when there is a buyer assigned
+            frozenTime: _buyer == address(0) // frozenTime does not apply when there is a buyer assigned
                 ? uint128(block.timestamp + (_frozenTime * 1 hours))
                 : 0 // buyer assigned
         });

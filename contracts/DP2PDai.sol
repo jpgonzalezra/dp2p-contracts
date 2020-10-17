@@ -4,10 +4,11 @@ pragma solidity 0.6.12;
 import "./interfaces/IDai.sol";
 import "./DP2P.sol";
 
+// WIP
 contract DP2PDai is DP2P {
-    address public daiAddress;
+    address public daiAddress; // TODO: dai address here as a constant! 
 
-    constructor(address _daiAddress) public {
+    constructor(address _daiAddress) public { // TODO: remove this constructor
         require(_daiAddress != address(0), "Constructor/invalid-address");
         daiAddress = _daiAddress;
     }

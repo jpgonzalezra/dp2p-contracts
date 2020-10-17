@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol";
 
 // mock class using ERC20
-contract TestToken2 is ERC20 {
-    constructor() public payable ERC20("Test2", "TEST2") {
+contract TestToken2 is Initializable, ERC20UpgradeSafe {
+
+    constructor() public payable {
+        __ERC20_init("Test1", "TEST1");
         _setupDecimals(6);
     }
 

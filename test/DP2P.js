@@ -104,6 +104,7 @@ contract("DP2P", (accounts) => {
   before("deploy contracts", async function () {
     erc20 = await TestToken.new({ from: owner });
     dp2p = await DP2P.new({ from: owner });
+    dp2p.initialize({ from: owner });
     await dp2p.newAgent(agent, 500, { from: owner });
 
     await dp2p.setPlatformFee(50, { from: owner });

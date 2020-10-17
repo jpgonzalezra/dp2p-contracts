@@ -1,0 +1,238 @@
+{
+  "contracts": {
+    "DP2P": {
+      "address": "0x035fC91D630cA840D04B70BEc0F9259f93030f1F",
+      "constructorCode": "608060405234801561001057600080fd5b50612aff806100206000396000f3fe",
+      "bodyBytecodeHash": "4d005966f95121b2ae421926551cc9eb914a7ee4fdd3d5d72a52b9b760d48781",
+      "localBytecodeHash": "0d264894add45258fe2c33a4c69af82a083c05b23db881c99cfd0470f9086249",
+      "deployedBytecodeHash": "0d264894add45258fe2c33a4c69af82a083c05b23db881c99cfd0470f9086249",
+      "types": {
+        "t_bool": {
+          "id": "t_bool",
+          "kind": "elementary",
+          "label": "bool"
+        },
+        "t_uint256": {
+          "id": "t_uint256",
+          "kind": "elementary",
+          "label": "uint256"
+        },
+        "t_array:50<t_uint256>": {
+          "id": "t_array:50<t_uint256>",
+          "valueType": "t_uint256",
+          "length": "50",
+          "kind": "array",
+          "label": "uint256[50]"
+        },
+        "t_address": {
+          "id": "t_address",
+          "kind": "elementary",
+          "label": "address"
+        },
+        "t_array:49<t_uint256>": {
+          "id": "t_array:49<t_uint256>",
+          "valueType": "t_uint256",
+          "length": "49",
+          "kind": "array",
+          "label": "uint256[49]"
+        },
+        "t_mapping<t_uint256>": {
+          "id": "t_mapping<t_uint256>",
+          "valueType": "t_uint256",
+          "label": "mapping(key => uint256)",
+          "kind": "mapping"
+        },
+        "t_struct<DP2P.Escrow>": {
+          "id": "t_struct<DP2P.Escrow>",
+          "kind": "struct",
+          "label": "DP2P.Escrow",
+          "members": [
+            {
+              "label": "agent",
+              "astId": 83,
+              "type": "t_address",
+              "src": "1348:13:0"
+            },
+            {
+              "label": "seller",
+              "astId": 85,
+              "type": "t_address",
+              "src": "1371:14:0"
+            },
+            {
+              "label": "buyer",
+              "astId": 87,
+              "type": "t_address",
+              "src": "1395:13:0"
+            },
+            {
+              "label": "token",
+              "astId": 89,
+              "type": "t_address",
+              "src": "1418:13:0"
+            },
+            {
+              "label": "balance",
+              "astId": 91,
+              "type": "t_uint256",
+              "src": "1441:15:0"
+            },
+            {
+              "label": "agentFee",
+              "astId": 93,
+              "type": "t_uint128",
+              "src": "1466:16:0"
+            },
+            {
+              "label": "frozenTime",
+              "astId": 95,
+              "type": "t_uint128",
+              "src": "1492:18:0"
+            }
+          ]
+        },
+        "t_uint128": {
+          "id": "t_uint128",
+          "kind": "elementary",
+          "label": "uint128"
+        },
+        "t_mapping<t_struct<DP2P.Escrow>>": {
+          "id": "t_mapping<t_struct<DP2P.Escrow>>",
+          "valueType": "t_struct<DP2P.Escrow>",
+          "label": "mapping(key => DP2P.Escrow)",
+          "kind": "mapping"
+        }
+      },
+      "storage": [
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol",
+          "label": "initialized",
+          "astId": 1996,
+          "type": "t_bool",
+          "src": "757:24:9"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol",
+          "label": "initializing",
+          "astId": 1999,
+          "type": "t_bool",
+          "src": "876:25:9"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol",
+          "label": "______gap",
+          "astId": 2064,
+          "type": "t_array:50<t_uint256>",
+          "src": "1982:29:9"
+        },
+        {
+          "contract": "ContextUpgradeSafe",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/GSN/Context.sol",
+          "label": "__gap",
+          "astId": 1989,
+          "type": "t_array:50<t_uint256>",
+          "src": "1277:25:8"
+        },
+        {
+          "contract": "OwnableUpgradeSafe",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol",
+          "label": "_owner",
+          "astId": 2076,
+          "type": "t_address",
+          "src": "651:22:10"
+        },
+        {
+          "contract": "OwnableUpgradeSafe",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol",
+          "label": "__gap",
+          "astId": 2194,
+          "type": "t_array:49<t_uint256>",
+          "src": "2434:25:10"
+        },
+        {
+          "contract": "DP2P",
+          "path": "contracts/DP2P.sol",
+          "label": "base",
+          "astId": 98,
+          "type": "t_uint256",
+          "src": "1616:21:0"
+        },
+        {
+          "contract": "DP2P",
+          "path": "contracts/DP2P.sol",
+          "label": "maxPlatformFee",
+          "astId": 100,
+          "type": "t_uint256",
+          "src": "1643:31:0"
+        },
+        {
+          "contract": "DP2P",
+          "path": "contracts/DP2P.sol",
+          "label": "maxAgentFee",
+          "astId": 102,
+          "type": "t_uint256",
+          "src": "1680:28:0"
+        },
+        {
+          "contract": "DP2P",
+          "path": "contracts/DP2P.sol",
+          "label": "platformFee",
+          "astId": 104,
+          "type": "t_uint256",
+          "src": "1714:26:0"
+        },
+        {
+          "contract": "DP2P",
+          "path": "contracts/DP2P.sol",
+          "label": "platformBalanceByToken",
+          "astId": 108,
+          "type": "t_mapping<t_uint256>",
+          "src": "1746:57:0"
+        },
+        {
+          "contract": "DP2P",
+          "path": "contracts/DP2P.sol",
+          "label": "agentFeeByAgentAddress",
+          "astId": 112,
+          "type": "t_mapping<t_uint256>",
+          "src": "1809:57:0"
+        },
+        {
+          "contract": "DP2P",
+          "path": "contracts/DP2P.sol",
+          "label": "escrows",
+          "astId": 116,
+          "type": "t_mapping<t_struct<DP2P.Escrow>>",
+          "src": "1872:41:0"
+        }
+      ],
+      "warnings": {
+        "hasConstructor": false,
+        "hasSelfDestruct": false,
+        "hasDelegateCall": false,
+        "hasInitialValuesInDeclarations": false,
+        "uninitializedBaseContracts": []
+      }
+    }
+  },
+  "solidityLibs": {},
+  "proxies": {
+    "dp2p/DP2P": [
+      {
+        "address": "0x1e804C29e1bda212F22d2E8C3421BeE48efA2fbb",
+        "version": "1.0.0",
+        "implementation": "0x035fC91D630cA840D04B70BEc0F9259f93030f1F",
+        "admin": "0xf94D08Cf469fF631d1D66123D952886082A3dc39",
+        "kind": "Upgradeable"
+      }
+    ]
+  },
+  "manifestVersion": "2.2",
+  "version": "1.0.0",
+  "proxyAdmin": {
+    "address": "0xf94D08Cf469fF631d1D66123D952886082A3dc39"
+  }
+}

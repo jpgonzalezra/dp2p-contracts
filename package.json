@@ -33,6 +33,7 @@
   },
   "homepage": "https://github.com/dp2p/dp2p",
   "devDependencies": {
+    "@openzeppelin/truffle-upgrades": "1.2.0",
     "bn-chai": "1.0.1",
     "chai": "4.2.0",
     "dotenv": "8.2.0",
@@ -47,12 +48,12 @@
     "ganache-cli": "6.4.3",
     "sol-merger": "3.1.0",
     "solium": "1.2.4",
-    "truffle": "5.0.12",
+    "promisify": "0.0.3",
+    "truffle": "5.1.49",
     "truffle-hdwallet-provider": "1.0.17",
     "truffle-plugin-verify": "0.3.11"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "3.1.0",
-    "promisify": "^0.0.3"
+    "@openzeppelin/contracts-ethereum-package": "3.0.0"
   }
 }

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
 
-contract DP2P is Ownable {
+
+contract DP2P is Initializable, OwnableUpgradeSafe {
     
     using SafeMath for uint256;
     using ECDSA for bytes32;
@@ -45,6 +46,8 @@ contract DP2P is Ownable {
     event NewAgent(address _agent, uint256 _fee);
     event RemoveAgent(address _agent);
 
+    // Structs
+
     struct Escrow {
         address agent;
         address seller;
@@ -55,28 +58,35 @@ contract DP2P is Ownable {
         uint128 frozenTime;
     }
     
+    // Storage preservation
+
     // 10000 -> 100%
     // 1000  -> 10%
     // 100   -> 1%
-    uint256 internal constant BASE = 10000; // 100%
-    uint256 internal constant MAX_PLATFORM_FEE = 100; // 1%
-    uint256 internal constant MAX_AGENT_FEE = 500; // 5%
-
+    uint256 internal base;
+    uint256 internal maxPlatformFee;
+    uint256 internal maxAgentFee;
     uint256 public platformFee;
-
     mapping(address => uint256) public platformBalanceByToken;
     mapping(address => uint256) public agentFeeByAgentAddress;
     mapping(bytes32 => Escrow) public escrows;
 
+    function initialize() public initializer {
+        OwnableUpgradeSafe.__Ownable_init();
+
+        base = 10000; // 100%
+        maxPlatformFee = 100; // 1%
+        maxAgentFee = 500; // 5%
+    }
     /**
         @notice set a new plataform fee
         @param _platformFee uint32 of plataform fee.
         @dev 1- the sender must be owner of this contract
-        @dev 2- the _plataformFee must be less than MAX_PLATFORM_FEE
+        @dev 2- the _plataformFee must be less than maxPlatformFee
     */
     function setPlatformFee(uint32 _platformFee) external onlyOwner {
         require(
-            _platformFee <= MAX_PLATFORM_FEE,
+            _platformFee <= maxPlatformFee,
             "setPlatformFee: invalid-fee"
         );
         platformFee = _platformFee;
@@ -115,7 +125,7 @@ contract DP2P is Ownable {
     function newAgent(address _agentAddress, uint256 _fee) external onlyOwner {
         require(_agentAddress != address(0), "newAgent: invalid-address");
         require(
-            _fee > 0 && _fee <= MAX_AGENT_FEE,
+            _fee > 0 && _fee <= maxAgentFee,
             "newAgent: invalid-agent-fee"
         );
         require(
@@ -209,7 +219,7 @@ contract DP2P is Ownable {
         );
 
         // Assign the fee amount to platform
-        uint256 platformAmount = _amount.mul(platformFee).div(BASE);
+        uint256 platformAmount = _amount.mul(platformFee).div(base);
         platformBalanceByToken[_token] = platformBalanceByToken[_token].add(
             platformAmount
         );
@@ -470,7 +480,7 @@ contract DP2P is Ownable {
 
         if (_withFee) {
             // calculate the fee
-            agentAmount = amount.mul(escrow.agentFee).div(BASE);
+            agentAmount = amount.mul(escrow.agentFee).div(base);
             // substract the agent fee
             escrow.balance = escrow.balance.sub(agentAmount);
             toAmount = amount.sub(agentAmount);

@@ -33,6 +33,7 @@ contract("DP2P", (accounts) => {
   before("deploy contracts", async function () {
     dai = await Dai.new(5777, { from: owner });
     dp2pDai = await DP2PDAI.new(dai.address, { from: owner });
+    dp2pDai.initialize({ from: owner });
     await dp2pDai.newAgent(agent, 500, { from: owner });
     await dp2pDai.setPlatformFee(50, { from: owner });
   });
@@ -41,21 +42,29 @@ contract("DP2P", (accounts) => {
     it("create, deposit with permit", async () => {
       const amount = WEI;
       const nonce = await dai.nonces(seller);
-      const id = await calcId(
-        agent,
-        seller,
-        buyer,
-        500,
-        dai.address,
-        nonce
-      );
+      const id = await calcId(agent, seller, buyer, 500, dai.address, nonce);
 
       await mint(seller, amount);
-      const privKey = Buffer.from("1972c66239e8c11c8c76d554d5ae4e1031404572c3b01e8ed6a360dcf480d11d", 'hex');
+      const privKey = Buffer.from(
+        "1972c66239e8c11c8c76d554d5ae4e1031404572c3b01e8ed6a360dcf480d11d",
+        "hex"
+      );
       console.log(seller);
-      const { v, r, s } = await signDaiPermit(dai, dp2pDai.address, nonce, seller, privKey);
+      const { v, r, s } = await signDaiPermit(
+        dai,
+        dp2pDai.address,
+        nonce,
+        seller,
+        privKey
+      );
 
-      const digest = await dai.getDigest(seller, dp2pDai.address, nonce, 0, true);
+      const digest = await dai.getDigest(
+        seller,
+        dp2pDai.address,
+        nonce,
+        0,
+        true
+      );
       expect(seller, await dai.getHolder(digest, v, r, s));
 
       const CreateAndDeposit = await toEvents(

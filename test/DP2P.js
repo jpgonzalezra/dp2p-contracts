@@ -156,7 +156,7 @@ contract("DP2P", (accounts) => {
     it("not owner want to set platform fee", async function () {
       await tryCatchRevert(
         () => dp2p.setPlatformFee(0, { from: creator }),
-        "Ownable: The owner should be the sender"
+        "Ownable: caller is not the owner"
       );
     });
     it("not owner want to withdraw tokens", async function () {
@@ -165,7 +165,7 @@ contract("DP2P", (accounts) => {
           dp2p.platformWithdraw([erc20.address], address0x, {
             from: creator,
           }),
-        "Ownable: The owner should be the sender"
+        "Ownable: caller is not the owner"
       );
     });
   });
@@ -902,8 +902,13 @@ contract("DP2P", (accounts) => {
       const escrow = await dp2p.escrows(id);
       const amount = escrow.balance;
 
+      const data = web3.eth.abi.encodeParameters(
+        ["bytes32", "address"],
+        [id, owner]
+      );
+
       const DisputeResolved = await toEvents(
-        dp2p.resolveDisputeBuyer(id, "0x", { from: owner }),
+        dp2p.resolveDisputeBuyer(data, "0x", { from: owner }),
         "DisputeResolved"
       );
 
@@ -936,19 +941,24 @@ contract("DP2P", (accounts) => {
 
       await updateBalances(id);
 
-      const agentSignature = fixSignature(
-        await web3.eth.sign(id, basicEscrow.agent)
+      const data = web3.eth.abi.encodeParameters(
+        ["bytes32", "address"],
+        [id, buyer]
       );
+      const agentSignature = fixSignature(
+        await web3.eth.sign(web3.utils.soliditySha3(data), basicEscrow.agent)
+      );
+
       await tryCatchRevert(
         () =>
-          dp2p.resolveDisputeBuyer(id, agentSignature, {
+          dp2p.resolveDisputeBuyer(data, agentSignature, {
             from: agent,
           }),
         "resolveDispute: invalid-sender"
       );
       await tryCatchRevert(
         () =>
-          dp2p.resolveDisputeBuyer(id, agentSignature, {
+          dp2p.resolveDisputeBuyer(data, agentSignature, {
             from: seller,
           }),
         "resolveDispute: invalid-sender"
@@ -1027,8 +1037,13 @@ contract("DP2P", (accounts) => {
       const escrow = await dp2p.escrows(id);
       const amount = escrow.balance;
 
+      const data = web3.eth.abi.encodeParameters(
+        ["bytes32", "address"],
+        [id, owner]
+      );
+
       const DisputeResolved = await toEvents(
-        dp2p.resolveDisputeSeller(id, "0x", { from: owner }),
+        dp2p.resolveDisputeSeller(data, "0x", { from: owner }),
         "DisputeResolved"
       );
 
@@ -1056,24 +1071,44 @@ contract("DP2P", (accounts) => {
         prevBalTokenEscrow.sub(amount)
       );
     });
-    it("revert, the signature was correct but the sender was not buyer", async () => {
+    it("resolveDisputeSeller from owner", async () => {
+      const id = await createBasicEscrow();
+      const data = web3.eth.abi.encodeParameters(
+        ["bytes32", "address"],
+        [id, owner]
+      );
+
+      await tryCatchRevert(
+        () =>
+        dp2p.resolveDisputeSeller(data, "0x", { from: seller }),
+        "ECDSA: invalid signature length"
+      );
+    });
+    
+    it("revert, the signature was correct but the sender was not seller", async () => {
       const id = await createBasicEscrow();
 
       await updateBalances(id);
 
-      const agentSignature = fixSignature(
-        await web3.eth.sign(id, basicEscrow.agent)
+      const data = web3.eth.abi.encodeParameters(
+        ["bytes32", "address"],
+        [id, seller]
       );
+
+      const agentSignature = fixSignature(
+        await web3.eth.sign(web3.utils.soliditySha3(data), basicEscrow.agent)
+      );
+
       await tryCatchRevert(
         () =>
-          dp2p.resolveDisputeSeller(id, agentSignature, {
+          dp2p.resolveDisputeSeller(data, agentSignature, {
             from: agent,
           }),
         "resolveDispute: invalid-sender"
       );
       await tryCatchRevert(
         () =>
-          dp2p.resolveDisputeSeller(id, agentSignature, {
+          dp2p.resolveDisputeSeller(data, agentSignature, {
             from: buyer,
           }),
         "resolveDispute: invalid-sender"

@@ -3,8 +3,8 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/cryptography/ECDSA.sol";
-import "./utils/Ownable.sol";
-import "./utils/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract DP2P is Ownable {
     
@@ -54,11 +54,14 @@ contract DP2P is Ownable {
         uint128 agentFee;
         uint128 frozenTime;
     }
+    
     // 10000 -> 100%
     // 1000  -> 10%
     // 100   -> 1%
-    uint256 internal constant MAX_PLATFORM_FEE = 100; 
-    uint256 internal constant MAX_AGENT_FEE = 1000; // 10%
+    uint256 internal constant BASE = 10000; // 100%
+    uint256 internal constant MAX_PLATFORM_FEE = 100; // 1%
+    uint256 internal constant MAX_AGENT_FEE = 500; // 5%
+
     uint256 public platformFee;
 
     mapping(address => uint256) public platformBalanceByToken;
@@ -206,7 +209,7 @@ contract DP2P is Ownable {
         );
 
         // Assign the fee amount to platform
-        uint256 platformAmount = _amount.fee(platformFee);
+        uint256 platformAmount = _amount.mul(platformFee).div(BASE);
         platformBalanceByToken[_token] = platformBalanceByToken[_token].add(
             platformAmount
         );
@@ -345,7 +348,7 @@ contract DP2P is Ownable {
     */
     function cancel(bytes32 _id) external {
         Escrow memory escrow = escrows[_id];
-        require(msg.sender == _owner, "cancel: invalid-sender");
+        require(msg.sender == owner(), "cancel: invalid-sender");
         _cancel(_id, escrow.token, escrow.balance, escrow.seller);
     }
 
@@ -415,7 +418,7 @@ contract DP2P is Ownable {
         bytes calldata _agentSignature
     ) internal {
         address sender = msg.sender;
-        bool owner = sender == _owner;
+        bool owner = sender == owner();
         require(sender == _sender || owner, "resolveDispute: invalid-sender");
         if (!owner) {
             require(
@@ -467,7 +470,7 @@ contract DP2P is Ownable {
 
         if (_withFee) {
             // calculate the fee
-            agentAmount = amount.fee(escrow.agentFee);
+            agentAmount = amount.mul(escrow.agentFee).div(BASE);
             // substract the agent fee
             escrow.balance = escrow.balance.sub(agentAmount);
             toAmount = amount.sub(agentAmount);

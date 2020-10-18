@@ -38,7 +38,7 @@ contract("DP2P", (accounts) => {
     await dp2pDai.setPlatformFee(50, { from: owner });
   });
 
-  describe.skip("Simple flow with DAI permite", () => {
+  describe.skip("Simple flow with DAI permit", () => {
     it("create, deposit with permit", async () => {
       const amount = WEI;
       const nonce = await dai.nonces(seller);

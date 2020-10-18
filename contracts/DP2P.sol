@@ -33,7 +33,8 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         address _sender,
         address _to,
         uint256 _toAmount,
-        uint256 _toAgent
+        uint256 _toAgent,
+        uint8 _senderType // 0 = seller, 1 = buyer
     );
     event Cancel(bytes32 _id, uint256 _amount);
     event EscrowComplete(bytes32 _id, address _buyer);
@@ -293,13 +294,21 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
             (bytes32, address)
         );
         Escrow memory escrow = escrows[id];
-        resolveDispute(
+        (uint256 toAmount, uint256 agentFee) = resolveDispute(
             id,
             escrow.seller,
             escrow.agent,
             ownerSignature,
             _data,
             _agentSignature
+        );
+        emit DisputeResolved(
+            id,
+            escrow.agent,
+            escrow.seller,
+            toAmount,
+            agentFee,
+            0 // senderType -> seller
         );
     }
 
@@ -320,13 +329,21 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
             (bytes32, address)
         );
         Escrow memory escrow = escrows[id];
-        resolveDispute(
+        (uint256 toAmount, uint256 agentFee) = resolveDispute(
             id,
             escrow.buyer,
             escrow.agent,
             ownerSignature,
             _data,
             _agentSignature
+        );
+        emit DisputeResolved(
+            id,
+            escrow.agent,
+            escrow.seller,
+            toAmount,
+            agentFee,
+            1 // senderType -> buyer
         );
     }
 
@@ -423,7 +440,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         address _ownerSignature,
         bytes calldata _data,
         bytes calldata _agentSignature
-    ) internal {
+    ) internal returns (uint256 toAmount, uint256 agentFee) {
         address sender = msg.sender;
         bool owner = sender == owner();
         require(sender == _sender || owner, "resolveDispute: invalid-sender");
@@ -435,8 +452,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
                 "resolveDispute: invalid-signature"
             );
         }
-        (uint256 toAmount, uint256 agentFee) = _withdraw(_id, _sender, !owner);
-        emit DisputeResolved(_id, _agent, _sender, toAmount, agentFee);
+        (toAmount, agentFee) = _withdraw(_id, _sender, !owner);
     }
 
     /**

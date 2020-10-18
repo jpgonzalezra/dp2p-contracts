@@ -1205,7 +1205,7 @@ contract("DP2P", (accounts) => {
         "cancelBySeller: invalid-frozen-time"
       );
 
-      await increase(duration.minutes(1));
+      await increase(duration.seconds(40));
 
       await tryCatchRevert(
         () => dp2p.cancelBySeller(id, { from: seller }),

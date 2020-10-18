@@ -6,9 +6,7 @@ import "@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.so
 import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
 
-
 contract DP2P is Initializable, OwnableUpgradeSafe {
-    
     using SafeMath for uint256;
     using ECDSA for bytes32;
 
@@ -57,7 +55,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         uint128 agentFee;
         uint128 frozenTime;
     }
-    
+
     // Storage preservation
 
     // 10000 -> 100%
@@ -78,6 +76,11 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         maxPlatformFee = 100; // 1%
         maxAgentFee = 500; // 5%
     }
+
+    function version() external pure returns (uint8) {
+        return 1;
+    }
+
     /**
         @notice set a new plataform fee
         @param _platformFee uint32 of plataform fee.
@@ -85,10 +88,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         @dev 2- the _plataformFee must be less than maxPlatformFee
     */
     function setPlatformFee(uint32 _platformFee) external onlyOwner {
-        require(
-            _platformFee <= maxPlatformFee,
-            "setPlatformFee: invalid-fee"
-        );
+        require(_platformFee <= maxPlatformFee, "setPlatformFee: invalid-fee");
         platformFee = _platformFee;
         emit SetFee(_platformFee);
     }
@@ -124,10 +124,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
     */
     function newAgent(address _agentAddress, uint256 _fee) external onlyOwner {
         require(_agentAddress != address(0), "newAgent: invalid-address");
-        require(
-            _fee > 0 && _fee <= maxAgentFee,
-            "newAgent: invalid-agent-fee"
-        );
+        require(_fee > 0 && _fee <= maxAgentFee, "newAgent: invalid-agent-fee");
         require(
             agentFeeByAgentAddress[_agentAddress] == 0,
             "newAgent: invalid agent"
@@ -433,10 +430,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         if (!owner) {
             require(
                 _agent ==
-                    getSignerRecovered(
-                        keccak256(_data),
-                        _agentSignature
-                    ) &&
+                    getSignerRecovered(keccak256(_data), _agentSignature) &&
                     sender == _ownerSignature,
                 "resolveDispute: invalid-signature"
             );

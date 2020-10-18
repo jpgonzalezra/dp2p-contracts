@@ -2,14 +2,14 @@
 
 ## Install
 
-First, install [Node.js](http://nodejs.org/) and [yarn](https://yarnpkg.com/).
+First, install [Node.js](http://nodejs.org/) and [npm](https://yarnpkg.com/).
 
-1- install the OpenZeppelin SDK running
+1- install OpenZeppelin SDK running
 ```sh
 npm install --global @openzeppelin/cli
 ```
 
-2- install dependencies
+2- install dependencies running
 ```sh
 npm install 
 ```

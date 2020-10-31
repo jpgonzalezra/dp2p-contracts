@@ -370,9 +370,8 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         @param _id bytes32 of escrow id
         @dev the sender must be owner, the escrow will be deleted
     */
-    function cancel(bytes32 _id) external {
+    function cancel(bytes32 _id) external onlyOwner {
         Escrow memory escrow = escrows[_id];
-        require(msg.sender == owner(), "cancel: invalid-sender");
         _cancel(_id, escrow.token, escrow.balance, escrow.seller);
     }
 

@@ -222,7 +222,7 @@ contract("DP2P", (accounts) => {
     it("cancel an escrow non-existent", async () => {
       await tryCatchRevert(
         () => dp2p.cancel(random32(), { from: agent }),
-        "cancel: invalid-sender"
+        "Ownable: caller is not the owner"
       );
     });
   });
@@ -1151,7 +1151,7 @@ contract("DP2P", (accounts) => {
       const id = await createBasicEscrow();
       await tryCatchRevert(
         () => dp2p.cancel(id, { from: seller }),
-        "cancel: invalid-sender"
+        "Ownable: caller is not the owner"
       );
     });
   });

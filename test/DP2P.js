@@ -862,6 +862,7 @@ contract("DP2P", (accounts) => {
       expect(DisputeResolved._to, buyer);
       expect(DisputeResolved._toAmount).to.eq.BN(toAmount);
       expect(DisputeResolved._toAgent).to.eq.BN(toAgent);
+      expect(DisputeResolved._senderType).to.eq.BN(bn(1))
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
       expect(escrow.buyer, buyer);
@@ -917,6 +918,7 @@ contract("DP2P", (accounts) => {
       expect(DisputeResolved._sender, agent);
       expect(DisputeResolved._to, buyer);
       expect(DisputeResolved._toAmount).to.eq.BN(amount);
+      expect(DisputeResolved._senderType).to.eq.BN(bn(1))
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
       expect(escrow.buyer, buyer);
@@ -994,6 +996,7 @@ contract("DP2P", (accounts) => {
       expect(DisputeResolved._to, buyer);
       expect(DisputeResolved._toAmount).to.eq.BN(toAmount);
       expect(DisputeResolved._toAgent).to.eq.BN(toAgent);
+      expect(DisputeResolved._senderType).to.eq.BN(bn(0))
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
       expect(escrow.buyer, buyer);
@@ -1052,6 +1055,7 @@ contract("DP2P", (accounts) => {
       expect(DisputeResolved._sender, agent);
       expect(DisputeResolved._to, buyer);
       expect(DisputeResolved._toAmount).to.eq.BN(amount);
+      expect(DisputeResolved._senderType).to.eq.BN(bn(0))
       expect(escrow.agent, agent);
       expect(escrow.seller, seller);
       expect(escrow.buyer, buyer);

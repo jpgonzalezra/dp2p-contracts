@@ -45,7 +45,6 @@
     "eslint-plugin-standard": "3.1.0",
     "eth-gas-reporter": "0.2.17",
     "eth-sig-util": "2.5.3",
-    "ganache-cli": "6.4.3",
     "promisify": "0.0.3",
     "sol-merger": "3.1.0",
     "solhint": "^3.3.2",

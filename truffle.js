@@ -17,7 +17,10 @@ module.exports = {
   mocha: {
     reporter: 'eth-gas-reporter',
   },
-  plugins: ['truffle-plugin-verify'],
+  plugins: [
+    'truffle-plugin-verify',
+    'solidity-coverage',
+  ],
   api_keys: { // eslint-disable-line camelcase
     etherscan: process.env.ETHERSCAN_API_KEY,
   },

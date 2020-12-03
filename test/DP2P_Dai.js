@@ -1,5 +1,5 @@
 const Dai = artifacts.require('Dai');
-const DP2PDAI = artifacts.require('DP2PDAI');
+const DP2PDAI = artifacts.require('DP2PDai');
 
 const { bn, expect, toEvents, signDaiPermit } = require('./helper/index.js');
 

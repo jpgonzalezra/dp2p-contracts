@@ -1034,7 +1034,7 @@ contract("DP2P", (accounts) => {
         () => dp2p.resolveDisputeSeller(data, agentSignature, { from: seller }),
         "resolveDispute: invalid-signature"
       );
-    });  
+    });
     it("resolveDisputeSeller from owner", async () => {
       const id = await createBasicEscrow();
       await updateBalances(id);
@@ -1089,7 +1089,7 @@ contract("DP2P", (accounts) => {
         "ECDSA: invalid signature length"
       );
     });
-    
+
     it("revert, the signature was correct but the sender was not seller", async () => {
       const id = await createBasicEscrow();
 

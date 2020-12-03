@@ -3,7 +3,7 @@ pragma solidity 0.6.12;
 
 
 contract Dai {
-    
+
     // --- ERC20 Data ---
     string  public constant name     = "Dai Stablecoin";
     string  public constant symbol   = "DAI";
@@ -69,7 +69,7 @@ contract Dai {
         totalSupply    = sub(totalSupply, wad);
         emit Transfer(usr, address(0), wad);
     }
-    
+
     function approve(address usr, uint wad) external returns (bool) {
         allowance[msg.sender][usr] = wad;
         emit Approval(msg.sender, usr, wad);
@@ -111,7 +111,7 @@ contract Dai {
         allowance[holder][spender] = wad;
         emit Approval(holder, spender, wad);
     }
-    
+
     function mint(address dst, uint wad) external {
         balanceOf[dst] = add(balanceOf[dst],  wad);
         emit Transfer(address(0), dst, wad);
@@ -136,5 +136,5 @@ contract Dai {
     function getHolder(bytes32 digest, uint8 v, bytes32 r, bytes32 s) external pure returns (address) {
         return ecrecover(digest, v, r, s);
     }
- 
+
 }

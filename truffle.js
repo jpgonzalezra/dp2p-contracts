@@ -3,17 +3,6 @@ require('dotenv').config();
 
 module.exports = {
   networks: {
-    development: {
-      host: 'localhost',
-      port: 7545,
-      network_id: '*', // eslint-disable-line camelcase
-    },
-    rpc: {
-      host: 'localhost',
-      port: 8545,
-      gas: 6.9e6,
-      network_id: '*', // eslint-disable-line camelcase
-    },
     ropsten: {
       provider: function () {
         return new HDWalletProvider(

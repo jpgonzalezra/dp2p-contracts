@@ -34,7 +34,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         address _to,
         uint256 _toAmount,
         uint256 _toAgent,
-        bool _type // false = seller, true = buyer
+        SENDER_TYPE _senderType
     );
     event Cancel(bytes32 _id, uint256 _amount);
     event EscrowComplete(bytes32 _id, address _buyer);
@@ -57,14 +57,19 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         uint128 frozenTime;
     }
 
+    enum SENDER_TYPE {
+        SELLER, // 0
+        BUYER // 1
+    }
+
     // Storage preservation
 
     // 10000 -> 100%
     // 1000  -> 10%
     // 100   -> 1%
-    uint256 internal base;
-    uint256 internal maxPlatformFee;
-    uint256 internal maxAgentFee;
+    uint256 constant internal base = 10000; // 100%
+    uint256 constant internal maxPlatformFee = 100; // 1%
+    uint256 constant internal maxAgentFee = 500; // 5%
     uint256 public platformFee;
     mapping(address => uint256) public platformBalanceByToken;
     mapping(address => uint256) public agentFeeByAgentAddress;
@@ -72,10 +77,6 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
 
     function initialize() public initializer {
         OwnableUpgradeSafe.__Ownable_init();
-
-        base = 10000; // 100%
-        maxPlatformFee = 100; // 1%
-        maxAgentFee = 500; // 5%
     }
 
     function version() external pure returns (uint8) {
@@ -308,7 +309,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
             escrow.seller,
             toAmount,
             agentFee,
-            false // senderType -> seller
+            SENDER_TYPE.SELLER
         );
     }
 
@@ -343,7 +344,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
             escrow.seller,
             toAmount,
             agentFee,
-            true // senderType -> buyer
+            SENDER_TYPE.BUYER
         );
     }
 

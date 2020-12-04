@@ -151,23 +151,23 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
 
     /**
         @notice Creates an Escrow and deposits an amount to it.
-        Escrows can be created without a specific buyer address. In this 
+        Escrows can be created without a specific buyer address. In this
         case the sender must specify the minimum amount of hours that the created escrow
-        will remain available for the given buyer by using the '_frozenTime' 
+        will remain available for the given buyer by using the '_frozenTime'
         parameter. The escrow creator won't have the ability to retreat the escrow
         and claim its funds. Once this time window of '_frozenTime' hours has passed
         the creator of the escrow will have the option to cancel it if needed.
         @dev creates and deposits tokens to the escrow,
-             Sender must be the selling part of the escrow 
+             Sender must be the selling part of the escrow
         @param _amount uint256 of amount to deposit.
         @param _agent address of agent.
         @param _buyer address of buyer.
         @param _token address of token to operate.
         @param _frozenTime uint128 minimum number of hours that the Escrow
-        will remain available for prospective buyers before its creator 
-        can opt to cancel it.  
+        will remain available for prospective buyers before its creator
+        can opt to cancel it.
         @param _salt uint256 randomly generated salt.
-        @return id escrow identifier 
+        @return id escrow identifier
     */
     function createAndDeposit(
         uint256 _amount,
@@ -249,7 +249,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
     /**
         @notice release the funds from a given escrow and send the tokens to the buyer address
         @param _id bytes of escrow id
-        @param _sellerSignature bytes of seller signature after to sign `_id` 
+        @param _sellerSignature bytes of seller signature after to sign `_id`
         @dev the sender should be the buyer with the seller signature
     */
     function releaseWithSellerSignature(
@@ -278,11 +278,11 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
     }
 
     /**
-        @notice This method should be used when the escrow is in dispute. 
-        When the agent resolved in its favor, the selling party must use this method 
+        @notice This method should be used when the escrow is in dispute.
+        When the agent resolved in its favor, the selling party must use this method
         to retrieve its tokens from the escrow
         @param _data bytes of escrow id
-        @param _agentSignature agent signature for _id 
+        @param _agentSignature agent signature for _id
         @dev The sender must be the seller
     */
     function resolveDisputeSeller(
@@ -313,11 +313,11 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
     }
 
     /**
-        @notice This method should be used when the escrow is in dispute. 
-        When the agent resolved in its favor, the buying party must use this method 
+        @notice This method should be used when the escrow is in dispute.
+        When the agent resolved in its favor, the buying party must use this method
         to retrieve its tokens from the escrow
         @param _data bytes of escrow id
-        @param _agentSignature agent signature for _id 
+        @param _agentSignature agent signature for _id
         @dev The sender must be the buyer
     */
     function resolveDisputeBuyer(
@@ -379,8 +379,8 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         @notice cancel an escrow by seller and send the escrow balance to back to its address
         @param _id bytes32 of escrow id
         @dev 1- the sender must be the seller
-        @dev 2- the buyer escrow must be 0 (open escrow) 
-        @dev 3- the frozen time must be less than current time  
+        @dev 2- the buyer escrow must be 0 (open escrow)
+        @dev 3- the frozen time must be less than current time
     */
     function cancelBySeller(bytes32 _id) external {
         Escrow memory escrow = escrows[_id];
@@ -401,7 +401,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         @param _id bytes32 of escrow id
         @param _token address of token
         @param _balance uint256 of balance to return
-        @dev this method can be called by agent, owner or 
+        @dev this method can be called by agent, owner or
         @dev seller only if is an incomplete escrow
     */
     function _cancel(
@@ -425,7 +425,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
     /**
         @notice resolves a dispute generically
         @param _id bytes32 of escrow id.
-        @param _sender address of sender. 
+        @param _sender address of sender.
         @param _agent address of agent.
         @param _agentSignature bytes of agent signature.
         @dev 1- must be seller if was called from resolveDisputeSeller or
@@ -458,7 +458,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         @notice get signer recovered with _data and _signature
         @param _data bytes32 of escrow id.
         @param _signature bytes of agent signature after to sign the escrow id `_data`
-        @dev 
+        @dev
         @return address of signer recovered
     */
     function getSignerRecovered(bytes32 _data, bytes memory _signature)

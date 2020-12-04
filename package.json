@@ -6,15 +6,15 @@
     "test"
   ],
   "scripts": {
-    "lint:js": "eslint .",
-    "lint:js:fix": "eslint . --fix",
-    "lint:sol": "solium -d .",
-    "lint:sol:fix": "solium -d . --fix",
+    "lint:js": "node_modules/.bin/eslint .",
+    "lint:js:fix": "node_modules/.bin/eslint . --fix",
+    "lint:sol": "node_modules/.bin/solhint \"**/*.sol\"",
+    "lint:sol:fix": "node_modules/.bin/solhint \"**/*.sol\" --fix",
     "lint": "npm run lint:js && npm run lint:sol",
     "lint:fix": "npm run lint:js:fix && npm run lint:sol:fix",
     "build-contracts": "sol-merger \"./contracts/*.sol\" ./build",
-    "test": "npm run ganache-cli:dev && truffle test --network rpc",
-    "ganache-cli:dev": "scripts/ganache-cli.sh --scripts-prepend-node-path"
+    "test": "node_modules/.bin/truffle test",
+    "coverage": "node_modules/.bin/truffle run coverage"
   },
   "repository": {
     "type": "git",
@@ -45,11 +45,11 @@
     "eslint-plugin-standard": "3.1.0",
     "eth-gas-reporter": "0.2.17",
     "eth-sig-util": "2.5.3",
-    "ganache-cli": "6.4.3",
-    "sol-merger": "3.1.0",
-    "solium": "1.2.4",
     "promisify": "0.0.3",
-    "truffle": "5.1.49",
+    "sol-merger": "3.1.0",
+    "solhint": "^3.3.2",
+    "solidity-coverage": "^0.7.13",
+    "truffle": "^5.1.49",
     "truffle-hdwallet-provider": "1.0.17",
     "truffle-plugin-verify": "0.3.11"
   },

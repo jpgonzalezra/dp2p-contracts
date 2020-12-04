@@ -1,14 +1,14 @@
-const Dai = artifacts.require("Dai");
-const DP2PDAI = artifacts.require("DP2PDAI");
+const Dai = artifacts.require('Dai');
+const DP2PDAI = artifacts.require('DP2PDai');
 
-const { bn, expect, toEvents, signDaiPermit } = require("./helper/index.js");
+const { bn, expect, toEvents, signDaiPermit } = require('./helper/index.js');
 
-contract("DP2P", (accounts) => {
-  const WEI = bn(web3.utils.toWei("1"));
+contract('DP2P', (accounts) => {
+  const WEI = bn(web3.utils.toWei('1'));
   const BASE = bn(10000);
   const owner = accounts[1];
   const creator = accounts[2];
-  const seller = "0x30837486478fdA93D06da23A8ab354703648C9c7";
+  const seller = '0x30837486478fdA93D06da23A8ab354703648C9c7';
   const buyer = accounts[4];
   const agent = accounts[5];
 
@@ -21,16 +21,16 @@ contract("DP2P", (accounts) => {
 
   const calcId = (_agent, _seller, _buyer, _fee, _token, _salt) =>
     web3.utils.soliditySha3(
-      { t: "address", v: dp2pDai.address },
-      { t: "address", v: _agent },
-      { t: "address", v: _seller },
-      { t: "address", v: _buyer },
-      { t: "uint256", v: _fee },
-      { t: "address", v: _token },
-      { t: "uint256", v: _salt }
+      { t: 'address', v: dp2pDai.address },
+      { t: 'address', v: _agent },
+      { t: 'address', v: _seller },
+      { t: 'address', v: _buyer },
+      { t: 'uint256', v: _fee },
+      { t: 'address', v: _token },
+      { t: 'uint256', v: _salt }
     );
 
-  before("deploy contracts", async function () {
+  before('deploy contracts', async function () {
     dai = await Dai.new(5777, { from: owner });
     dp2pDai = await DP2PDAI.new(dai.address, { from: owner });
     dp2pDai.initialize({ from: owner });
@@ -38,16 +38,16 @@ contract("DP2P", (accounts) => {
     await dp2pDai.setPlatformFee(50, { from: owner });
   });
 
-  describe.skip("Simple flow with DAI permit", () => {
-    it("create, deposit with permit", async () => {
+  describe.skip('Simple flow with DAI permit', () => {
+    it('create, deposit with permit', async () => {
       const amount = WEI;
       const nonce = await dai.nonces(seller);
       const id = await calcId(agent, seller, buyer, 500, dai.address, nonce);
 
       await mint(seller, amount);
       const privKey = Buffer.from(
-        "1972c66239e8c11c8c76d554d5ae4e1031404572c3b01e8ed6a360dcf480d11d",
-        "hex"
+        '1972c66239e8c11c8c76d554d5ae4e1031404572c3b01e8ed6a360dcf480d11d',
+        'hex'
       );
       console.log(seller);
       const { v, r, s } = await signDaiPermit(
@@ -80,7 +80,7 @@ contract("DP2P", (accounts) => {
             from: seller,
           }
         ),
-        "CreateAndDeposit"
+        'CreateAndDeposit'
       );
 
       expect(CreateAndDeposit._id, id);

@@ -6,7 +6,7 @@ import "./DP2P.sol";
 
 // WIP
 contract DP2PDai is DP2P {
-    address public daiAddress; // TODO: dai address here as a constant! 
+    address public daiAddress; // TODO: dai address here as a constant!
 
     constructor(address _daiAddress) public { // TODO: remove this constructor
         require(_daiAddress != address(0), "Constructor/invalid-address");

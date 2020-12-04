@@ -1,15 +1,15 @@
-const sigUtil = require("eth-sig-util");
+const sigUtil = require('eth-sig-util');
 const { promisify } = require('util');
 const BN = web3.utils.BN;
-const expect = require("chai").use(require("bn-chai")(BN)).expect;
+const expect = require('chai').use(require('bn-chai')(BN)).expect;
 
 module.exports.expect = expect;
-module.exports.address0x = "0x0000000000000000000000000000000000000000";
+module.exports.address0x = '0x0000000000000000000000000000000000000000';
 module.exports.bn = (number) => {
   return web3.utils.toBN(number);
 };
 module.exports.maxUint = (base) => {
-  return this.bn("2").pow(this.bn(base)).sub(this.bn("1"));
+  return this.bn('2').pow(this.bn(base)).sub(this.bn('1'));
 };
 module.exports.random32bn = () => {
   return this.bn(this.random32());
@@ -21,12 +21,12 @@ module.exports.random32 = () => {
 module.exports.tryCatchRevert = async (
   promise,
   message,
-  headMsg = "revert "
+  headMsg = 'revert '
 ) => {
-  if (message === "") {
+  if (message === '') {
     headMsg = headMsg.slice(0, -1);
     console.log(
-      "    \u001b[93m\u001b[2m\u001b[1m⬐ Warning:\u001b[0m\u001b[30m\u001b[1m There is an empty revert/require message"
+      '    \u001b[93m\u001b[2m\u001b[1m⬐ Warning:\u001b[0m\u001b[30m\u001b[1m There is an empty revert/require message'
     );
   }
   try {
@@ -36,16 +36,16 @@ module.exports.tryCatchRevert = async (
     assert(
       error.message.search(headMsg + message) >= 0 ||
         process.env.SOLIDITY_COVERAGE,
-      "Expected a revert '" +
+      'Expected a revert \'' +
         headMsg +
         message +
-        "', got '" +
+        '\', got \'' +
         error.message +
-        "' instead"
+        '\' instead'
     );
     return;
   }
-  throw new Error("Expected throw not received");
+  throw new Error('Expected throw not received');
 };
 module.exports.toEvents = async (tx, ...events) => {
   if (tx instanceof Promise) tx = await tx;
@@ -58,7 +58,7 @@ module.exports.toEvents = async (tx, ...events) => {
   );
 
   if (eventObjs.length === 0 || eventObjs.some((x) => x === undefined)) {
-    console.log("\t\u001b[91m\u001b[2m\u001b[1mError: The event dont find");
+    console.log('\t\u001b[91m\u001b[2m\u001b[1mError: The event dont find');
     assert.fail();
   }
   eventObjs = eventObjs.map((x) => x.args);
@@ -82,23 +82,23 @@ module.exports.signDaiPermit = async (
   privateKey
 ) => {
   const domainSchema = [
-    { name: "name", type: "string" },
-    { name: "version", type: "string" },
-    { name: "chainId", type: "uint256" },
-    { name: "verifyingContract", type: "address" },
+    { name: 'name', type: 'string' },
+    { name: 'version', type: 'string' },
+    { name: 'chainId', type: 'uint256' },
+    { name: 'verifyingContract', type: 'address' },
   ];
 
   const permitSchema = [
-    { name: "holder", type: "address" },
-    { name: "spender", type: "address" },
-    { name: "nonce", type: "uint256" },
-    { name: "expiry", type: "uint256" },
-    { name: "allowed", type: "bool" },
+    { name: 'holder', type: 'address' },
+    { name: 'spender', type: 'address' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'expiry', type: 'uint256' },
+    { name: 'allowed', type: 'bool' },
   ];
 
   const domainData = {
-    name: "Dai Stablecoin",
-    version: "1",
+    name: 'Dai Stablecoin',
+    version: '1',
     chainId: 5777,
     verifyingContract: dai.address,
   };
@@ -115,7 +115,7 @@ module.exports.signDaiPermit = async (
       EIP712Domain: domainSchema,
       Permit: permitSchema,
     },
-    primaryType: "Permit",
+    primaryType: 'Permit',
     domain: domainData,
     message,
   };
@@ -132,35 +132,34 @@ module.exports.signDaiPermit = async (
 
 const advanceBlock = () => {
   return promisify(web3.currentProvider.send.bind(web3.currentProvider))({
-    jsonrpc: "2.0",
-    method: "evm_mine",
+    jsonrpc: '2.0',
+    method: 'evm_mine',
     id: new Date().getTime(),
   });
 };
 
 // Returns the time of the last mined block in seconds
 module.exports.latest = async () => {
-  const block = await web3.eth.getBlock("latest");
+  const block = await web3.eth.getBlock('latest');
   return new BN(block.timestamp);
 };
 
 module.exports.latestBlock = async () => {
-  const block = await web3.eth.getBlock("latest");
+  const block = await web3.eth.getBlock('latest');
   return new BN(block.number);
-}
+};
 
 // Increases ganache time by the passed duration in seconds
 module.exports.increase = async (duration) => {
-  if (!BN.isBN(duration)) {
+  if (!BN.isBN(duration))
     duration = new BN(duration);
-  }
 
   if (duration.isNeg())
     throw Error(`Cannot increase time by a negative amount (${duration})`);
 
   await promisify(web3.currentProvider.send.bind(web3.currentProvider))({
-    jsonrpc: "2.0",
-    method: "evm_increaseTime",
+    jsonrpc: '2.0',
+    method: 'evm_increaseTime',
     params: [duration.toNumber()],
     id: new Date().getTime(),
   });
@@ -175,10 +174,9 @@ module.exports.increase = async (duration) => {
  *
  * @param target time in seconds
  */
-module.exports.increaseTo = async(target) => {
-  if (!BN.isBN(target)) {
+module.exports.increaseTo = async (target) => {
+  if (!BN.isBN(target))
     target = new BN(target);
-  }
 
   const now = await this.latest();
 
@@ -188,25 +186,25 @@ module.exports.increaseTo = async(target) => {
     );
   const diff = target.sub(now);
   return this.increase(diff);
-}
+};
 
 module.exports.duration = {
   seconds: function (val) {
     return new BN(val);
   },
   minutes: function (val) {
-    return new BN(val).mul(this.seconds("60"));
+    return new BN(val).mul(this.seconds('60'));
   },
   hours: function (val) {
-    return new BN(val).mul(this.minutes("60"));
+    return new BN(val).mul(this.minutes('60'));
   },
   days: function (val) {
-    return new BN(val).mul(this.hours("24"));
+    return new BN(val).mul(this.hours('24'));
   },
   weeks: function (val) {
-    return new BN(val).mul(this.days("7"));
+    return new BN(val).mul(this.days('7'));
   },
   years: function (val) {
-    return new BN(val).mul(this.days("365"));
+    return new BN(val).mul(this.days('365'));
   },
 };

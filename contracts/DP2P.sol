@@ -84,11 +84,11 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
 
     /**
         @notice set a new plataform fee
-        @param _platformFee uint32 of plataform fee.
+        @param _platformFee uint256 of plataform fee.
         @dev 1- the sender must be owner of this contract
         @dev 2- the _plataformFee must be less than maxPlatformFee
     */
-    function setPlatformFee(uint32 _platformFee) external onlyOwner {
+    function setPlatformFee(uint256 _platformFee) external onlyOwner {
         require(_platformFee <= maxPlatformFee, "setPlatformFee: invalid-fee");
         platformFee = _platformFee;
         emit SetFee(_platformFee);

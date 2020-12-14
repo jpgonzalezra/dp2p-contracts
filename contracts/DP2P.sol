@@ -34,7 +34,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
         address _to,
         uint256 _toAmount,
         uint256 _toAgent,
-        uint8 _senderType // 0 = seller, 1 = buyer
+        bool _type // false = seller, true = buyer
     );
     event Cancel(bytes32 _id, uint256 _amount);
     event EscrowComplete(bytes32 _id, address _buyer);
@@ -308,7 +308,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
             escrow.seller,
             toAmount,
             agentFee,
-            0 // senderType -> seller
+            false // senderType -> seller
         );
     }
 
@@ -343,7 +343,7 @@ contract DP2P is Initializable, OwnableUpgradeSafe {
             escrow.seller,
             toAmount,
             agentFee,
-            1 // senderType -> buyer
+            true // senderType -> buyer
         );
     }
 
